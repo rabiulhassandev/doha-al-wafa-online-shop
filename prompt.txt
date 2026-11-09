@@ -1,0 +1,69 @@
+You are helping me build an online store for a new client. Plan first. Do not write or change any application code until I approve your plan.
+
+## Project context
+
+- The client owns a clothing shop named "Doha AL WAFA" in Qatar that sells Jelabiyas.
+- The website will turn traffic from TikTok, Instagram, Facebook, and similar platforms into orders.
+- Most visitors will arrive on a phone from a social media link, so the journey from product page to completed order must be fast and simple.
+- Reference website: https://lrflt.com
+- A fresh application is already set up in this project. Inspect it and build on what is there.
+
+## Requirements
+
+1. Include all customer-facing and order-related functionality found on the reference website.
+2. The reference website sells single-color products. My client's products come in multiple colors, so color must be a core part of the product design:
+   - Each product can have multiple colors.
+   - Selecting a color updates the product images.
+   - Stock and availability are tracked per color and size combination.
+   - The selected color and size carry through the cart, checkout, order records, and admin panel.
+3. Payment is Cash on Delivery only for now. Do not add a payment gateway, but keep the order and payment structure flexible enough to add one later.
+4. The UI can be inspired by the reference website but must not be a copy. Create an original, professional, good-looking, and user-friendly design. Do not reuse its logo, brand name, images, or written content.
+5. Suggest extra features only when they clearly improve the user experience or help the client sell more.
+
+## Step 1: Study the reference website
+
+Use the Chrome extension to explore https://lrflt.com in both desktop and mobile widths. Review the full customer journey, including:
+
+- Home page and navigation
+- Categories, collections, filters, sorting, and search
+- Product pages, including galleries, sizes, stock status, and related products
+- Cart and checkout up to, but not including, final order submission
+- Account, wishlist, order tracking, and contact features, if available
+- Language, currency, delivery, returns, and policy pages
+- Popups, offers, social links, and other marketing features
+
+Rules for this step:
+
+- Do not place a real order, submit a real form, or create an account.
+- Do not enter real personal information.
+- If a feature cannot be reached without doing one of these things, list it as "not verified" and do not guess how it works.
+
+## Step 2: Create the plan
+
+Save the plan to `docs/PROJECT_PLAN.md`. Include:
+
+1. **Reference website audit:** Each feature found, where it appears, and how it works.
+2. **Feature matrix:** Each feature marked as Copy Functionality, Improve, Add, or Skip, with a short reason.
+3. **Customer journeys:** Step-by-step flows from a social media link to a completed COD order, including guest checkout.
+4. **Multi-color product design:** How products, colors, sizes, images, prices, and stock will work together.
+5. **Original design direction:** Layout, typography, colors, and mobile experience, plus how the design will differ from the reference website.
+6. **Admin panel:** How the client will manage products, colors, sizes, stock, categories, orders, order statuses, customers, delivery charges, banners, promotions, and basic reports.
+7. **Qatar-specific needs:** Currency (QAR), Qatar phone numbers, delivery areas and charges, and address fields suited to Qatar. Include English and Arabic support with right-to-left layout as a recommendation for my decision.
+8. **Social commerce features:** Evaluate fast mobile performance, short shareable product links, social preview images, WhatsApp ordering or support, Meta Pixel, TikTok Pixel, campaign tracking, and product catalog feeds for Meta and TikTok.
+9. **Recommended extras:** Separate these into Launch and Later, with a short reason for each.
+10. **Technical plan:** Database structure, main pages and routes, and the components needed.
+11. **Quality plan:** Testing for mobile layouts, the order flow, stock accuracy, security, performance, and SEO.
+12. **Implementation phases:** Small phases that can be reviewed separately, each with clear deliverables and acceptance criteria.
+13. **Open questions:** Everything you need from me or the client, including brand assets, product details, and delivery rules. Give a recommended default for each question where possible.
+
+## Step 3: Stop for my review
+
+After saving the plan:
+
+1. Give me a short summary and list the decisions you need from me.
+2. Stop and wait for my review.
+3. Do not start implementation until I explicitly approve the plan.
+
+## After approval
+
+Work one phase at a time. At the end of each phase, tell me what changed and how to test it, then wait for my approval before moving to the next phase.
