@@ -48,10 +48,19 @@
             <span class="sr-only">{{ __('Wishlist') }}</span>
         </a>
 
-        {{-- The bag goes live in Phase 4. --}}
-        <button type="button" class="-me-2 inline-flex size-11 items-center justify-center rounded-full text-ink-300" disabled>
+        <a
+            href="{{ route('cart.show') }}"
+            x-on:click.prevent="$store.cart.show()"
+            class="relative -me-2 inline-flex size-11 items-center justify-center rounded-full hover:bg-sand-100"
+        >
             <x-icon name="bag" class="size-6" />
+            <span
+                x-show="$store.cart.count > 0"
+                x-text="$store.cart.count"
+                @if ($cartCount === 0) style="display: none" @endif
+                class="absolute end-0.5 top-0.5 inline-flex min-w-4.5 items-center justify-center rounded-full bg-ink-900 px-1 text-[10px] leading-4.5 font-semibold text-white"
+            >{{ $cartCount }}</span>
             <span class="sr-only">{{ __('Shopping bag') }}</span>
-        </button>
+        </a>
     </div>
 </header>

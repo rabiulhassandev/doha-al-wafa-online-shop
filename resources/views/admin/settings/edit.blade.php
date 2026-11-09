@@ -49,6 +49,45 @@
             </div>
         </x-admin.card>
 
+        <x-admin.card id="delivery" title="Delivery" description="Fees and delivery times for each area are set under Delivery areas.">
+            @php
+                $daysOff = array_map('intval', old('delivery_days_off', $settings['delivery_days_off'] ?? []));
+                $weekdays = [6 => 'Saturday', 7 => 'Sunday', 1 => 'Monday', 2 => 'Tuesday', 3 => 'Wednesday', 4 => 'Thursday', 5 => 'Friday'];
+            @endphp
+            <div class="grid gap-6 sm:grid-cols-2">
+                <x-admin.input
+                    name="delivery_free_over"
+                    label="Free delivery from (optional)"
+                    :value="$deliveryFreeOver"
+                    prefix="QAR"
+                    inputmode="decimal"
+                    hint="Orders of at least this amount get free delivery. Leave empty for no free delivery."
+                />
+                <x-admin.input
+                    name="max_quantity_per_item"
+                    type="number"
+                    label="Most of one size per order"
+                    :value="$settings['max_quantity_per_item']"
+                    min="1"
+                    max="50"
+                    required
+                    hint="Limits bulk orders of a single color and size."
+                />
+                <fieldset class="sm:col-span-2">
+                    <legend class="text-sm font-medium">Days without delivery</legend>
+                    <p class="mt-1 text-xs text-ink-500">Skipped when shoppers see their delivery dates.</p>
+                    <div class="mt-2 flex flex-wrap gap-2">
+                        @foreach ($weekdays as $isoDay => $dayName)
+                            <label class="inline-flex h-10 cursor-pointer items-center gap-2 rounded-lg border border-sand-300 bg-white px-3 text-sm has-checked:border-maroon-700 has-checked:bg-maroon-50">
+                                <input type="checkbox" name="delivery_days_off[]" value="{{ $isoDay }}" @checked(in_array($isoDay, $daysOff, true)) class="size-4 accent-maroon-700">
+                                {{ $dayName }}
+                            </label>
+                        @endforeach
+                    </div>
+                </fieldset>
+            </div>
+        </x-admin.card>
+
         <x-admin.card title="Inventory">
             <div class="max-w-xs">
                 <x-admin.input

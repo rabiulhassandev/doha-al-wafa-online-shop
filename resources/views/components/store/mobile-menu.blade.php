@@ -4,7 +4,7 @@
     x-data
     x-cloak
     x-show="$store.mobileMenu.open"
-    x-effect="document.body.classList.toggle('overflow-hidden', $store.mobileMenu.open)"
+    x-effect="document.body.classList.toggle('overflow-hidden', $store.mobileMenu.open || $store.cart.open)"
     x-on:keydown.escape.window="$store.mobileMenu.hide()"
     class="fixed inset-0 z-50 lg:hidden"
     role="dialog"

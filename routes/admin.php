@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CollectionController;
 use App\Http\Controllers\Admin\ColorController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\DeliveryZoneController;
 use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\ProductColorController;
 use App\Http\Controllers\Admin\ProductColorPositionController;
@@ -82,5 +83,6 @@ Route::middleware(['auth', 'can:access-admin'])->group(function (): void {
         Route::put('settings', [SettingsController::class, 'update'])->name('settings.update');
 
         Route::resource('staff', StaffController::class)->except('show');
+        Route::resource('delivery-zones', DeliveryZoneController::class)->except('show');
     });
 });

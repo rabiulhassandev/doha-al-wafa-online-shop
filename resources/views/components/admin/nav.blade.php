@@ -53,6 +53,9 @@
             <x-admin.nav-link :href="route('admin.settings.edit')" icon="settings" :active="request()->routeIs('admin.settings.*')">
                 Settings
             </x-admin.nav-link>
+            <x-admin.nav-link :href="route('admin.delivery-zones.index')" icon="truck" :active="request()->routeIs('admin.delivery-zones.*')">
+                Delivery areas
+            </x-admin.nav-link>
             <x-admin.nav-link :href="route('admin.staff.index')" icon="users" :active="request()->routeIs('admin.staff.*')">
                 Team
             </x-admin.nav-link>

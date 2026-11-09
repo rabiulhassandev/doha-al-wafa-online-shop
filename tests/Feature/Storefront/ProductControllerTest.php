@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Category;
+use App\Models\DeliveryZone;
 use App\Models\SizeGuide;
 use App\Models\User;
 use App\Services\Settings;
@@ -114,4 +115,24 @@ it('links the photo and canonical address for sharing', function () {
         ->assertOk()
         ->assertSee('<link rel="canonical" href="'.route('products.show', ['locale' => 'en', 'product' => $product]).'">', false)
         ->assertSee('<meta property="og:image" content="'.$product->colors()->first()->images()->first()->url(1200).'">', false);
+});
+
+it('gives the size picker what it needs to add to the bag', function () {
+    app(Settings::class)->set(['max_quantity_per_item' => 4]);
+    $product = listedProduct(stockByColor: ['navy' => ['56' => 2]]);
+
+    $this->get(route('products.show', ['locale' => 'en', 'product' => $product]))
+        ->assertOk()
+        ->assertViewHas('pageData', fn (array $data) => $data['maxQuantity'] === 4
+            && $data['colors']['navy']['sizes']['56']['variantId'] === $product->variants()->sole()->id);
+});
+
+it('shows delivery dates that skip Fridays', function () {
+    $this->travelTo('2026-11-11 10:00:00');
+    DeliveryZone::factory()->create(['eta_min_days' => 1, 'eta_max_days' => 3]);
+    $product = listedProduct();
+
+    $this->get(route('products.show', ['locale' => 'en', 'product' => $product]))
+        ->assertOk()
+        ->assertSee('Delivered across Qatar between Thu 12 Nov and Sun 15 Nov');
 });

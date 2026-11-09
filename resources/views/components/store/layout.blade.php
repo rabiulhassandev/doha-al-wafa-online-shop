@@ -14,6 +14,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
         <meta name="theme-color" content="#fbf8f3">
+        <meta name="csrf-token" content="{{ csrf_token() }}">
 
         <title>{{ $title ? "{$title} · {$storeName}" : $storeName }}</title>
 
@@ -40,6 +41,7 @@
         {{-- Kept outside the header so these full-screen overlays cover the whole viewport. --}}
         <x-store.mobile-menu />
         <x-store.search-overlay />
+        <x-store.cart-drawer />
 
         <main id="main" class="flex-1">
             {{ $slot }}

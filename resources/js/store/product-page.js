@@ -9,6 +9,10 @@ import { rememberViewed } from './recently-viewed';
 export default (data) => ({
     ...data,
     imageIndex: 0,
+    quantity: 1,
+    sizeError: false,
+    adding: false,
+    notice: null,
     lightboxOpen: false,
     sizeGuideOpen: false,
     sizeUnit: 'cm',
@@ -82,7 +86,42 @@ export default (data) => ({
         }
 
         this.size = sizeSlug;
+        this.sizeError = false;
+        this.notice = null;
         this.updateAddress();
+    },
+
+    changeQuantity(step) {
+        this.quantity = Math.min(this.maxQuantity, Math.max(1, this.quantity + step));
+    },
+
+    /**
+     * Make sure a size is chosen before adding or ordering; otherwise point the shopper to the sizes.
+     */
+    requireSize() {
+        if (this.selected?.available) {
+            return true;
+        }
+
+        this.sizeError = true;
+        document.getElementById('size-picker')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        return false;
+    },
+
+    async addToBag() {
+        if (!this.requireSize() || this.adding) {
+            return;
+        }
+
+        this.adding = true;
+        this.notice = null;
+        const result = await this.$store.cart.add(this.selected.variantId, this.quantity);
+        this.adding = false;
+
+        if (!result.ok) {
+            this.notice = result.message ?? this.messages.addFailed;
+        }
     },
 
     onGalleryScroll(gallery) {

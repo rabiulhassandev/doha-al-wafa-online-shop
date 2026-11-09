@@ -24,6 +24,9 @@ function settingsPayload(array $overrides = []): array
         'announcement_en' => '',
         'announcement_ar' => '',
         'low_stock_threshold' => '3',
+        'delivery_free_over' => '',
+        'delivery_days_off' => ['5'],
+        'max_quantity_per_item' => '10',
         ...$overrides,
     ];
 }
@@ -104,4 +107,29 @@ describe('update', function () {
 
         $this->assertDatabaseCount('settings', 0);
     });
+});
+
+it('saves the delivery settings', function () {
+    $this->actingAs(User::factory()->owner()->create())
+        ->put(route('admin.settings.update'), settingsPayload([
+            'delivery_free_over' => '300',
+            'delivery_days_off' => ['5', '6'],
+            'max_quantity_per_item' => '5',
+        ]))
+        ->assertRedirectToRoute('admin.settings.edit');
+
+    expect(Setting::query()->where('key', 'delivery_free_over')->value('value'))->toBe(30000);
+    expect(Setting::query()->where('key', 'delivery_days_off')->value('value'))->toBe([5, 6]);
+    expect(Setting::query()->where('key', 'max_quantity_per_item')->value('value'))->toBe(5);
+});
+
+it('saves no days off when every day is unticked', function () {
+    $payload = settingsPayload();
+    unset($payload['delivery_days_off']);
+
+    $this->actingAs(User::factory()->owner()->create())
+        ->put(route('admin.settings.update'), $payload)
+        ->assertRedirectToRoute('admin.settings.edit');
+
+    expect(Setting::query()->where('key', 'delivery_days_off')->value('value'))->toBe([]);
 });

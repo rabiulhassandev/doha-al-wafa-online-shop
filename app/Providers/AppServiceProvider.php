@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\User;
 use App\Services\Settings;
+use App\View\Composers\CartCountComposer;
 use App\View\Composers\StoreNavigationComposer;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
@@ -46,5 +47,6 @@ class AppServiceProvider extends ServiceProvider
             ['components.store.header', 'components.store.mobile-menu', 'components.store.footer'],
             StoreNavigationComposer::class,
         );
+        View::composer(['components.store.header', 'components.store.cart-drawer'], CartCountComposer::class);
     }
 }

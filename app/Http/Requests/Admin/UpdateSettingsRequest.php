@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use App\Rules\QatarPhoneNumber;
+use App\Support\Money;
 use App\Support\QatarPhone;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -38,6 +39,10 @@ class UpdateSettingsRequest extends FormRequest
             'announcement_en' => ['nullable', 'string', 'max:160'],
             'announcement_ar' => ['nullable', 'string', 'max:160'],
             'low_stock_threshold' => ['required', 'integer', 'min:0', 'max:100'],
+            'delivery_free_over' => ['nullable', 'decimal:0,2', 'min:0', 'max:100000'],
+            'delivery_days_off' => ['array'],
+            'delivery_days_off.*' => ['integer', 'between:1,7', 'distinct'],
+            'max_quantity_per_item' => ['required', 'integer', 'min:1', 'max:50'],
         ];
     }
 
@@ -59,6 +64,9 @@ class UpdateSettingsRequest extends FormRequest
             'announcement_en' => 'English announcement',
             'announcement_ar' => 'Arabic announcement',
             'low_stock_threshold' => 'low stock level',
+            'delivery_free_over' => 'free delivery amount',
+            'delivery_days_off.*' => 'day without delivery',
+            'max_quantity_per_item' => 'most of one size per order',
         ];
     }
 
@@ -76,6 +84,10 @@ class UpdateSettingsRequest extends FormRequest
         }
 
         $values['low_stock_threshold'] = (int) $values['low_stock_threshold'];
+        $values['max_quantity_per_item'] = (int) $values['max_quantity_per_item'];
+        $freeOver = $values['delivery_free_over'] ?? null;
+        $values['delivery_free_over'] = $freeOver === null ? null : Money::toDirhams($freeOver);
+        $values['delivery_days_off'] = array_map('intval', $this->validated('delivery_days_off', []));
 
         return $values;
     }

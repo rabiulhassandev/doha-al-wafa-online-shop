@@ -11,6 +11,16 @@
     $whatsApp = $settings->phone('whatsapp_number');
     $sizeGuide = $product->sizeGuide;
     $coverImage = $selectedColor->images->first();
+    $deliveryText = __('Delivered to your door across Qatar');
+    if ($deliveryWindow !== null) {
+        [$deliveryFrom, $deliveryTo] = $deliveryWindow;
+        $deliveryText = $deliveryFrom->isSameDay($deliveryTo)
+            ? __('Delivered across Qatar on :date', ['date' => $deliveryFrom->locale($locale)->translatedFormat('D j M')])
+            : __('Delivered across Qatar between :from and :to', [
+                'from' => $deliveryFrom->locale($locale)->translatedFormat('D j M'),
+                'to' => $deliveryTo->locale($locale)->translatedFormat('D j M'),
+            ]);
+    }
     $data = $pageData + [
         'priceText' => $priceText,
         'compareAtText' => $compareAtText,
@@ -22,6 +32,7 @@
             'sizeSoldOut' => __('Sold out in this size'),
             'colorSoldOut' => __('This color is sold out'),
             'whatsApp' => __('Hello! I am interested in :product (:details). :url'),
+            'addFailed' => __('Could not add to your bag. Please try again.'),
         ],
     ];
 @endphp
@@ -130,7 +141,7 @@
                     </div>
                 </fieldset>
 
-                <fieldset>
+                <fieldset id="size-picker" class="scroll-mt-24">
                     <div class="flex items-center justify-between gap-3">
                         <legend class="text-sm">{{ __('Size') }}: <span class="font-semibold" x-text="sizeName(size) ?? messages.chooseSize">{{ __('Choose a size') }}</span></legend>
                         @if ($sizeGuide)
@@ -153,15 +164,40 @@
                             >{{ $size->translated('name') }}</button>
                         @endforeach
                     </div>
-                    <p x-show="statusText" x-text="statusText" x-bind:class="statusTone === 'warning' ? 'text-danger-700' : 'text-success-700'" class="mt-3 text-sm font-medium" role="status" style="display: none"></p>
+                    <p x-show="sizeError" class="mt-3 text-sm font-medium text-danger-700" role="alert" style="display: none">{{ __('Choose a size first.') }}</p>
+                    <p x-show="statusText && ! sizeError" x-text="statusText" x-bind:class="statusTone === 'warning' ? 'text-danger-700' : 'text-success-700'" class="mt-3 text-sm font-medium" role="status" style="display: none"></p>
                 </fieldset>
 
                 <div class="space-y-3">
-                    <div class="grid grid-cols-2 gap-3">
-                        <x-store.button variant="secondary" size="lg" disabled>{{ __('Add to bag') }}</x-store.button>
-                        <x-store.button size="lg" disabled>{{ __('Order now') }}</x-store.button>
+                    <div class="flex items-center gap-3">
+                        <div class="inline-flex h-14 shrink-0 items-center rounded-full border border-sand-300 bg-white" role="group" aria-label="{{ __('Quantity') }}">
+                            <button type="button" x-on:click="changeQuantity(-1)" x-bind:disabled="quantity <= 1" class="inline-flex size-12 items-center justify-center rounded-full text-lg disabled:opacity-30">
+                                <span aria-hidden="true">−</span>
+                                <span class="sr-only">{{ __('One less') }}</span>
+                            </button>
+                            <span class="min-w-7 text-center font-medium tabular-nums" x-text="quantity" aria-live="polite">1</span>
+                            <button type="button" x-on:click="changeQuantity(1)" x-bind:disabled="quantity >= maxQuantity" class="inline-flex size-12 items-center justify-center rounded-full text-lg disabled:opacity-30">
+                                <span aria-hidden="true">+</span>
+                                <span class="sr-only">{{ __('One more') }}</span>
+                            </button>
+                        </div>
+                        <x-store.button variant="secondary" size="lg" class="flex-1" x-on:click="addToBag()" x-bind:disabled="adding">
+                            <span x-show="! adding">{{ __('Add to bag') }}</span>
+                            <span x-show="adding" style="display: none">{{ __('Adding…') }}</span>
+                        </x-store.button>
                     </div>
-                    <p class="text-center text-xs text-ink-500">{{ __('Online ordering opens very soon.') }}</p>
+
+                    <form method="POST" action="{{ route('checkout.buy-now') }}" x-on:submit="requireSize() || $event.preventDefault()">
+                        @csrf
+                        <input type="hidden" name="variant_id" x-bind:value="selected?.variantId ?? ''">
+                        <input type="hidden" name="quantity" x-bind:value="quantity">
+                        <x-store.button type="submit" size="lg" class="w-full">{{ __('Order now') }}</x-store.button>
+                    </form>
+
+                    <p x-show="notice" x-text="notice" class="text-sm font-medium text-danger-700" role="alert" style="display: none"></p>
+                    @error('variant_id')
+                        <p class="text-sm font-medium text-danger-700" role="alert">{{ $message }}</p>
+                    @enderror
 
                     @if ($whatsApp)
                         <a x-bind:href="whatsAppUrl" href="https://wa.me/{{ $whatsApp->whatsAppNumber() }}" target="_blank" rel="noopener" class="flex h-12 w-full items-center justify-center gap-2 rounded-full border border-success-700/30 bg-success-50 text-sm font-medium text-success-700 hover:border-success-700">
@@ -186,7 +222,10 @@
 
                 <ul class="grid gap-2 rounded-2xl bg-white p-4 text-sm">
                     <li class="flex items-center gap-3"><x-icon name="cash" class="size-5 text-maroon-700" />{{ __('Pay in cash when your order arrives') }}</li>
-                    <li class="flex items-center gap-3"><x-icon name="truck" class="size-5 text-maroon-700" />{{ __('Delivered to your door across Qatar') }}</li>
+                    <li class="flex items-center gap-3">
+                        <x-icon name="truck" class="size-5 text-maroon-700" />
+                        {{ $deliveryText }}
+                    </li>
                 </ul>
 
                 <div class="divide-y divide-sand-200 border-y border-sand-200">
@@ -247,7 +286,7 @@
                     <p class="truncate text-sm font-semibold" x-text="selected ? selected.price : priceText">{{ $priceText }}</p>
                     <p class="truncate text-xs text-ink-500"><span x-text="current.name">{{ $selectedColor->displayName() }}</span><span x-show="size"> · <span x-text="sizeName(size)"></span></span></p>
                 </div>
-                <x-store.button size="md" disabled>{{ __('Add to bag') }}</x-store.button>
+                <x-store.button size="md" x-on:click="addToBag()" x-bind:disabled="adding">{{ __('Add to bag') }}</x-store.button>
             </div>
         </div>
 

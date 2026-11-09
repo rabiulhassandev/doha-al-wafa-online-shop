@@ -56,6 +56,11 @@ return [
         'announcement_en' => null,
         'announcement_ar' => null,
         'low_stock_threshold' => 3,
+        // Dirhams; null means no free delivery offer.
+        'delivery_free_over' => null,
+        // ISO weekdays with no delivery: 5 = Friday.
+        'delivery_days_off' => [5],
+        'max_quantity_per_item' => 10,
     ],
 
 ];

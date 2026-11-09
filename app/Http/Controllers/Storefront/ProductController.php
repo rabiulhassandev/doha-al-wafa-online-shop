@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Storefront;
 
 use App\Enums\ProductStatus;
 use App\Http\Controllers\Controller;
+use App\Models\DeliveryZone;
 use App\Models\Product;
 use App\Models\ProductColor;
 use App\Models\ProductImage;
@@ -11,19 +12,23 @@ use App\Models\ProductVariant;
 use App\Models\Size;
 use App\Services\ProductCatalog;
 use App\Services\Settings;
+use App\Support\DeliveryEstimate;
 use App\Support\Money;
+use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
+    public function __construct(private readonly Settings $settings) {}
+
     /**
      * Show a product page. "?color=navy&size=56" opens it in that color and size.
      *
      * Team members can preview products that are not active yet.
      */
-    public function show(Request $request, Product $product, ProductCatalog $catalog, Settings $settings): View
+    public function show(Request $request, Product $product, ProductCatalog $catalog): View
     {
         $product->load([
             'category.parent',
@@ -54,10 +59,34 @@ class ProductController extends Controller
             'selectedColor' => $selectedColor,
             'isPreview' => $isPreview,
             'priceRange' => $product->priceRange(),
-            'pageData' => $this->pageData($product, $colors, $sizes, $selectedColor, $selectedSizeSlug, (int) $settings->get('low_stock_threshold')),
+            'pageData' => $this->pageData($product, $colors, $sizes, $selectedColor, $selectedSizeSlug, (int) $this->settings->get('low_stock_threshold')),
             'related' => $catalog->related($product),
+            'deliveryWindow' => $this->deliveryWindow(),
             'breadcrumbs' => $this->breadcrumbs($product),
         ]);
+    }
+
+    /**
+     * Get the earliest and latest delivery dates across the active delivery areas, if there are any.
+     *
+     * @return array{CarbonImmutable, CarbonImmutable}|null
+     */
+    private function deliveryWindow(): ?array
+    {
+        $zones = DeliveryZone::query()->active();
+        $fastest = (clone $zones)->min('eta_min_days');
+        $slowest = (clone $zones)->max('eta_max_days');
+
+        if ($fastest === null) {
+            return null;
+        }
+
+        return DeliveryEstimate::between(
+            CarbonImmutable::now(),
+            (int) $fastest,
+            (int) $slowest,
+            array_map('intval', (array) $this->settings->get('delivery_days_off')),
+        );
     }
 
     /**
@@ -89,6 +118,7 @@ class ProductController extends Controller
 
         return [
             'productId' => $product->id,
+            'maxQuantity' => (int) $this->settings->get('max_quantity_per_item'),
             'productName' => $product->translated('name'),
             'url' => route('products.show', $product),
             'color' => $selectedColor->color->slug,
@@ -106,6 +136,7 @@ class ProductController extends Controller
                         $compareAtPrice = $variant->compare_at_price ?? $product->compare_at_price;
 
                         return [$variant->size->slug => [
+                            'variantId' => $variant->id,
                             'available' => $variant->stock > 0,
                             'lowStock' => $variant->stock > 0 && $variant->stock <= $lowStockThreshold ? $variant->stock : null,
                             'price' => Money::format($price, $locale),
