@@ -37,6 +37,7 @@ class UpdateSettingsRequest extends FormRequest
             'snapchat_url' => ['nullable', 'url:https', 'max:255'],
             'announcement_en' => ['nullable', 'string', 'max:160'],
             'announcement_ar' => ['nullable', 'string', 'max:160'],
+            'low_stock_threshold' => ['required', 'integer', 'min:0', 'max:100'],
         ];
     }
 
@@ -57,6 +58,7 @@ class UpdateSettingsRequest extends FormRequest
             'snapchat_url' => 'Snapchat link',
             'announcement_en' => 'English announcement',
             'announcement_ar' => 'Arabic announcement',
+            'low_stock_threshold' => 'low stock level',
         ];
     }
 
@@ -72,6 +74,8 @@ class UpdateSettingsRequest extends FormRequest
         foreach (self::PHONE_SETTINGS as $key) {
             $values[$key] = QatarPhone::tryParse($values[$key])?->e164();
         }
+
+        $values['low_stock_threshold'] = (int) $values['low_stock_threshold'];
 
         return $values;
     }

@@ -62,6 +62,10 @@ class SizeController extends Controller
      */
     public function destroy(Size $size): RedirectResponse
     {
+        if ($size->variants()->exists()) {
+            return back()->with('error', "Size “{$size->name_en}” is used by products. Switch it off in their stock grids instead.");
+        }
+
         $size->delete();
 
         return to_route('admin.sizes.index')->with('status', "Size “{$size->name_en}” was deleted.");

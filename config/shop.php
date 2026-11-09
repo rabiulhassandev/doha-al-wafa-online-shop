@@ -55,6 +55,7 @@ return [
         'snapchat_url' => null,
         'announcement_en' => null,
         'announcement_ar' => null,
+        'low_stock_threshold' => 3,
     ],
 
 ];

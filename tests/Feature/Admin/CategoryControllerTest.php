@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Category;
+use App\Models\Product;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -205,6 +206,18 @@ describe('destroy', function () {
 
         $this->assertModelMissing($category);
         Storage::disk('public')->assertMissing('categories/women.webp');
+    });
+
+    it('refuses to delete a category that has products', function () {
+        $women = Category::factory()->create(['name_en' => 'Women']);
+        Product::factory()->for($women)->create();
+
+        $this->actingAs(User::factory()->staff()->create())
+            ->from(route('admin.categories.index'))
+            ->delete(route('admin.categories.destroy', $women))
+            ->assertSessionHas('error', '“Women” has products. Move them to another category first.');
+
+        $this->assertModelExists($women);
     });
 
     it('refuses to delete a category that has sub-categories', function () {

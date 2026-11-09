@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\ImageFocus;
 use App\Enums\ImagePreset;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -12,6 +13,13 @@ use Intervention\Image\ImageManager;
 class ImageStore
 {
     private const WEBP_QUALITY = 82;
+
+    /**
+     * Product photo widths, largest first. Heights follow the 4:5 shape.
+     */
+    public const PRODUCT_WIDTHS = [1200, 800, 400];
+
+    private const PRODUCT_SOURCE_MAX = 2000;
 
     public function __construct(private readonly ImageManager $images) {}
 
@@ -36,6 +44,40 @@ class ImageStore
         );
 
         return $path;
+    }
+
+    /**
+     * Store a product photo: an uncropped source copy plus 4:5 crops at each product width.
+     *
+     * Widths larger than the cropped photo are skipped, so small photos are never enlarged.
+     * Writes "{directory}/source.webp" and "{directory}/{width}.webp".
+     *
+     * @return list<int> the widths that were stored, largest first
+     */
+    public function storeProductImage(string $sourcePath, string $directory, ImageFocus $focus): array
+    {
+        $disk = Storage::disk(config('shop.media_disk'));
+        $encoder = new WebpEncoder(quality: self::WEBP_QUALITY);
+
+        $image = $this->images->decodePath($sourcePath)->scaleDown(self::PRODUCT_SOURCE_MAX, self::PRODUCT_SOURCE_MAX);
+        $disk->put("{$directory}/source.webp", $image->encode($encoder)->toString());
+
+        $cropWidth = min($image->width(), intdiv($image->height() * 4, 5));
+        $image->cover($cropWidth, intdiv($cropWidth * 5, 4), $focus->alignment());
+
+        $storedWidths = [];
+
+        foreach (self::PRODUCT_WIDTHS as $width) {
+            if ($width > $cropWidth && $width !== min(self::PRODUCT_WIDTHS)) {
+                continue;
+            }
+
+            $image->scaleDown(width: $width);
+            $disk->put("{$directory}/{$width}.webp", $image->encode($encoder)->toString());
+            $storedWidths[] = $width;
+        }
+
+        return $storedWidths;
     }
 
     /**

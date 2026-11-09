@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Color;
+use App\Models\ProductColor;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -94,5 +95,18 @@ describe('destroy', function () {
             ->assertRedirectToRoute('admin.colors.index');
 
         $this->assertModelMissing($color);
+    });
+
+    it('refuses to delete a color that products use', function () {
+        $color = Color::factory()->create(['name_en' => 'Navy']);
+        ProductColor::factory()->for($color)->count(2)->create();
+
+        $this->actingAs(User::factory()->staff()->create())
+            ->from(route('admin.colors.index'))
+            ->delete(route('admin.colors.destroy', $color))
+            ->assertRedirectToRoute('admin.colors.index')
+            ->assertSessionHas('error', '“Navy” is used by 2 products. Remove it from them first.');
+
+        $this->assertModelExists($color);
     });
 });

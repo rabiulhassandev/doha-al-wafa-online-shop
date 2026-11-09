@@ -13,10 +13,19 @@
         @can('manage-catalog')
             <p class="px-3 pt-6 pb-2 text-xs font-medium tracking-wider text-sand-300/60 uppercase">Catalog</p>
 
+            <x-admin.nav-link :href="route('admin.products.index')" icon="bag" :active="request()->routeIs('admin.products.*')">
+                Products
+            </x-admin.nav-link>
+            <x-admin.nav-link :href="route('admin.inventory.index')" icon="layers" :active="request()->routeIs('admin.inventory.*', 'admin.stock-movements.*')">
+                Inventory
+            </x-admin.nav-link>
+
+            <p class="px-3 pt-6 pb-2 text-xs font-medium tracking-wider text-sand-300/60 uppercase">Catalog setup</p>
+
             <x-admin.nav-link :href="route('admin.categories.index')" icon="tag" :active="request()->routeIs('admin.categories.*')">
                 Categories
             </x-admin.nav-link>
-            <x-admin.nav-link :href="route('admin.collections.index')" icon="layers" :active="request()->routeIs('admin.collections.*')">
+            <x-admin.nav-link :href="route('admin.collections.index')" icon="grid" :active="request()->routeIs('admin.collections.*')">
                 Collections
             </x-admin.nav-link>
             <x-admin.nav-link :href="route('admin.colors.index')" icon="palette" :active="request()->routeIs('admin.colors.*')">

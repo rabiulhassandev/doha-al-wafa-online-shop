@@ -5,10 +5,21 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CollectionController;
 use App\Http\Controllers\Admin\ColorController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\InventoryController;
+use App\Http\Controllers\Admin\ProductColorController;
+use App\Http\Controllers\Admin\ProductColorPositionController;
+use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\ProductDefaultColorController;
+use App\Http\Controllers\Admin\ProductImageController;
+use App\Http\Controllers\Admin\ProductImagePositionController;
+use App\Http\Controllers\Admin\ProductStockController;
+use App\Http\Controllers\Admin\ProductVariantController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\SizeController;
 use App\Http\Controllers\Admin\SizeGuideController;
 use App\Http\Controllers\Admin\StaffController;
+use App\Http\Controllers\Admin\StockAdjustmentController;
+use App\Http\Controllers\Admin\StockMovementController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -32,6 +43,30 @@ Route::middleware(['auth', 'can:access-admin'])->group(function (): void {
     Route::get('/', DashboardController::class)->name('dashboard');
 
     Route::middleware('can:manage-catalog')->group(function (): void {
+        Route::resource('products', ProductController::class)->except('show');
+
+        Route::prefix('products/{product}')->name('products.')->scopeBindings()->group(function (): void {
+            Route::get('colors', [ProductColorController::class, 'index'])->name('colors.index');
+            Route::post('colors', [ProductColorController::class, 'store'])->name('colors.store');
+            Route::put('colors/{color}', [ProductColorController::class, 'update'])->name('colors.update');
+            Route::delete('colors/{color}', [ProductColorController::class, 'destroy'])->name('colors.destroy');
+            Route::put('colors/{color}/position', ProductColorPositionController::class)->name('colors.position');
+            Route::put('colors/{color}/default', ProductDefaultColorController::class)->name('colors.default');
+
+            Route::post('colors/{color}/images', [ProductImageController::class, 'store'])->name('colors.images.store');
+            Route::delete('colors/{color}/images/{image}', [ProductImageController::class, 'destroy'])->name('colors.images.destroy');
+            Route::put('colors/{color}/images/{image}/position', ProductImagePositionController::class)->name('colors.images.position');
+
+            Route::get('stock', [ProductStockController::class, 'edit'])->name('stock.edit');
+            Route::put('stock', [ProductStockController::class, 'update'])->name('stock.update');
+            Route::put('variants', [ProductVariantController::class, 'update'])->name('variants.update');
+        });
+
+        Route::get('inventory', [InventoryController::class, 'index'])->name('inventory.index');
+        Route::get('inventory/{variant}', [StockAdjustmentController::class, 'create'])->name('inventory.adjust');
+        Route::post('inventory/{variant}/adjustments', [StockAdjustmentController::class, 'store'])->name('inventory.adjustments.store');
+        Route::get('stock-history', [StockMovementController::class, 'index'])->name('stock-movements.index');
+
         Route::resource('categories', CategoryController::class)->except('show');
         Route::resource('collections', CollectionController::class)->except('show');
         Route::resource('colors', ColorController::class)->except('show');

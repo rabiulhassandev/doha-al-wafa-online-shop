@@ -23,6 +23,7 @@ function settingsPayload(array $overrides = []): array
         'snapchat_url' => '',
         'announcement_en' => '',
         'announcement_ar' => '',
+        'low_stock_threshold' => '3',
         ...$overrides,
     ];
 }

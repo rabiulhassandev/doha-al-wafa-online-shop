@@ -72,6 +72,12 @@ class ColorController extends Controller
      */
     public function destroy(Color $color): RedirectResponse
     {
+        $productCount = $color->productColors()->count();
+
+        if ($productCount > 0) {
+            return back()->with('error', "“{$color->name_en}” is used by {$productCount} ".str('product')->plural($productCount).'. Remove it from them first.');
+        }
+
         $color->delete();
 
         return to_route('admin.colors.index')->with('status', "“{$color->name_en}” was deleted.");

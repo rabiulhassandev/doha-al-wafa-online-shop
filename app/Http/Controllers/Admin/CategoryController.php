@@ -87,6 +87,10 @@ class CategoryController extends Controller
             return back()->with('error', "“{$category->name_en}” has sub-categories. Move or delete them first.");
         }
 
+        if ($category->products()->exists()) {
+            return back()->with('error', "“{$category->name_en}” has products. Move them to another category first.");
+        }
+
         $category->delete();
 
         return to_route('admin.categories.index')->with('status', "“{$category->name_en}” was deleted.");

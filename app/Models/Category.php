@@ -71,6 +71,16 @@ class Category extends Model
     }
 
     /**
+     * Get the products in this category.
+     *
+     * @return HasMany<Product, $this>
+     */
+    public function products(): HasMany
+    {
+        return $this->hasMany(Product::class);
+    }
+
+    /**
      * Scope the query to categories without a parent.
      *
      * @param  Builder<self>  $query

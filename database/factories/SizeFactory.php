@@ -23,7 +23,7 @@ class SizeFactory extends Factory
         return [
             'name_en' => $length,
             'name_ar' => null,
-            'slug' => $length,
+            'slug' => "length-{$length}",
             'group' => SizeGroup::Length,
             'sort_order' => (int) $length,
         ];

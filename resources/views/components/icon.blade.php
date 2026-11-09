@@ -1,7 +1,8 @@
 @props(['name'])
 
 {{-- Outline icon set drawn for this project (24px grid, 1.75 stroke). --}}
-<svg {{ $attributes->merge(['class' => 'size-5 shrink-0', 'aria-hidden' => 'true']) }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+{{-- The default size only applies when the caller passes no classes, so "size-4" never competes with "size-5". --}}
+<svg {{ $attributes->merge(['class' => $attributes->has('class') ? 'shrink-0' : 'size-5 shrink-0', 'aria-hidden' => 'true']) }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
     @switch($name)
         @case('menu')
             <path d="M4 7h16M4 12h16M4 17h16" />

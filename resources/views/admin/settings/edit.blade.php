@@ -49,6 +49,21 @@
             </div>
         </x-admin.card>
 
+        <x-admin.card title="Inventory">
+            <div class="max-w-xs">
+                <x-admin.input
+                    name="low_stock_threshold"
+                    type="number"
+                    label="Low stock level"
+                    :value="$settings['low_stock_threshold']"
+                    min="0"
+                    max="100"
+                    required
+                    hint="Sizes with this many or fewer left are flagged as low stock."
+                />
+            </div>
+        </x-admin.card>
+
         <div class="sticky bottom-0 -mx-4 flex justify-end border-t border-sand-200 bg-sand-100/95 px-4 py-3 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0">
             <x-admin.button type="submit">Save settings</x-admin.button>
         </div>

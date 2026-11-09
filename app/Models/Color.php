@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * A shared palette color that products offer and shoppers filter by.
@@ -38,6 +39,16 @@ class Color extends Model
         return [
             'sort_order' => 'integer',
         ];
+    }
+
+    /**
+     * Get the products offered in this color.
+     *
+     * @return HasMany<ProductColor, $this>
+     */
+    public function productColors(): HasMany
+    {
+        return $this->hasMany(ProductColor::class);
     }
 
     /**

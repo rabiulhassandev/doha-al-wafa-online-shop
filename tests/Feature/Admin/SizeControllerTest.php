@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\SizeGroup;
+use App\Models\ProductVariant;
 use App\Models\Size;
 use App\Models\User;
 
@@ -92,5 +93,17 @@ describe('destroy', function () {
             ->assertRedirectToRoute('admin.sizes.index');
 
         $this->assertModelMissing($size);
+    });
+
+    it('refuses to delete a size that products use', function () {
+        $size = Size::factory()->create(['name_en' => '56', 'slug' => '56']);
+        ProductVariant::factory()->for($size)->create();
+
+        $this->actingAs(User::factory()->staff()->create())
+            ->from(route('admin.sizes.index'))
+            ->delete(route('admin.sizes.destroy', $size))
+            ->assertSessionHas('error', 'Size “56” is used by products. Switch it off in their stock grids instead.');
+
+        $this->assertModelExists($size);
     });
 });
