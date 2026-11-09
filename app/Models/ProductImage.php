@@ -60,10 +60,18 @@ class ProductImage extends Model
      */
     public function url(int $width = 800): string
     {
+        return Storage::disk(config('shop.media_disk'))->url($this->path($width));
+    }
+
+    /**
+     * Get the stored file path of the smallest width that is at least the given width.
+     */
+    public function path(int $width = 800): string
+    {
         $widths = collect($this->widths)->sort()->values();
         $chosen = $widths->first(fn (int $storedWidth): bool => $storedWidth >= $width) ?? $widths->last();
 
-        return Storage::disk(config('shop.media_disk'))->url("{$this->directory}/{$chosen}.webp");
+        return "{$this->directory}/{$chosen}.webp";
     }
 
     /**

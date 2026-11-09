@@ -36,6 +36,16 @@ class Settings
     }
 
     /**
+     * Get the ISO weekdays with no delivery (1 = Monday … 7 = Sunday).
+     *
+     * @return list<int>
+     */
+    public function deliveryDaysOff(): array
+    {
+        return array_values(array_map('intval', (array) $this->get('delivery_days_off')));
+    }
+
+    /**
      * Get every setting, with saved values layered over the configured defaults.
      *
      * @return array<string, mixed>

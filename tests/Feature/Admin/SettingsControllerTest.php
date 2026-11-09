@@ -26,7 +26,9 @@ function settingsPayload(array $overrides = []): array
         'low_stock_threshold' => '3',
         'delivery_free_over' => '',
         'delivery_days_off' => ['5'],
+        'preferred_date_enabled' => '1',
         'max_quantity_per_item' => '10',
+        'order_alert_email' => '',
         ...$overrides,
     ];
 }
@@ -132,4 +134,22 @@ it('saves no days off when every day is unticked', function () {
         ->assertRedirectToRoute('admin.settings.edit');
 
     expect(Setting::query()->where('key', 'delivery_days_off')->value('value'))->toBe([]);
+});
+
+it('saves where new orders are emailed and whether shoppers pick a delivery date', function () {
+    $this->actingAs(User::factory()->owner()->create())
+        ->put(route('admin.settings.update'), settingsPayload([
+            'order_alert_email' => 'orders@example.com',
+            'preferred_date_enabled' => '0',
+        ]))
+        ->assertRedirectToRoute('admin.settings.edit');
+
+    expect(Setting::query()->where('key', 'order_alert_email')->value('value'))->toBe('orders@example.com');
+    expect(Setting::query()->where('key', 'preferred_date_enabled')->value('value'))->toBeFalse();
+});
+
+it('rejects an invalid new order email', function () {
+    $this->actingAs(User::factory()->owner()->create())
+        ->put(route('admin.settings.update'), settingsPayload(['order_alert_email' => 'not an email']))
+        ->assertSessionHasErrors('order_alert_email');
 });

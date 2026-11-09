@@ -41,6 +41,10 @@
             <circle cx="7" cy="17.5" r="1.75" />
             <circle cx="17.5" cy="17.5" r="1.75" />
             @break
+        @case('map-pin')
+            <path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z" />
+            <circle cx="12" cy="10" r="2.25" />
+            @break
         @case('cash')
             <rect x="3" y="6.5" width="18" height="11" rx="2" />
             <circle cx="12" cy="12" r="2.5" />

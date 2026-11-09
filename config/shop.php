@@ -1,5 +1,7 @@
 <?php
 
+use App\Services\Payments\CashOnDeliveryGateway;
+
 return [
 
     /*
@@ -60,7 +62,25 @@ return [
         'delivery_free_over' => null,
         // ISO weekdays with no delivery: 5 = Friday.
         'delivery_days_off' => [5],
+        'preferred_date_enabled' => true,
         'max_quantity_per_item' => 10,
+        // New order emails go here; null sends none.
+        'order_alert_email' => null,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Payment Gateways
+    |--------------------------------------------------------------------------
+    |
+    | The payment methods offered at checkout, in order, each with the class
+    | that handles it (an App\Services\Payments\PaymentGateway). Add an online
+    | gateway here once its class exists.
+    |
+    */
+
+    'payment_gateways' => [
+        'cash_on_delivery' => CashOnDeliveryGateway::class,
     ],
 
 ];

@@ -4,6 +4,8 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Routing\Exceptions\InvalidSignatureException;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\URL;
@@ -39,5 +41,12 @@ return Application::configure(basePath: dirname(__DIR__))
             URL::defaults(['locale' => $locale]);
 
             return null;
+        });
+
+        // An old or altered thank-you link explains itself instead of showing a bare 403.
+        $exceptions->render(function (InvalidSignatureException $exception, Request $request): ?Response {
+            return $request->routeIs('orders.thank-you')
+                ? response()->view('storefront.orders.link-expired', status: 403)
+                : null;
         });
     })->create();

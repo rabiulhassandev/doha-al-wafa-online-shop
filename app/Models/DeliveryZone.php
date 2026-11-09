@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Models\Concerns\Translatable;
+use App\Support\DeliveryEstimate;
+use Carbon\CarbonImmutable;
 use Database\Factories\DeliveryZoneFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Scope;
@@ -18,6 +20,11 @@ class DeliveryZone extends Model
 {
     /** @use HasFactory<DeliveryZoneFactory> */
     use HasFactory, Translatable;
+
+    /**
+     * How many delivery days shoppers can choose from as their preferred date.
+     */
+    public const CHOOSABLE_DAYS = 7;
 
     /**
      * The model's default values for attributes.
@@ -46,6 +53,28 @@ class DeliveryZone extends Model
             'sort_order' => 'integer',
             'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * Get the earliest and latest delivery dates for an order placed at the given time.
+     *
+     * @param  list<int>  $daysOff  ISO weekdays with no delivery
+     * @return array{CarbonImmutable, CarbonImmutable}
+     */
+    public function deliveryWindow(CarbonImmutable $orderedAt, array $daysOff): array
+    {
+        return DeliveryEstimate::between($orderedAt, $this->eta_min_days, $this->eta_max_days, $daysOff);
+    }
+
+    /**
+     * Get the days a shopper may pick as their preferred delivery date.
+     *
+     * @param  list<int>  $daysOff  ISO weekdays with no delivery
+     * @return list<CarbonImmutable>
+     */
+    public function choosableDeliveryDays(CarbonImmutable $orderedAt, array $daysOff): array
+    {
+        return DeliveryEstimate::choosableDays($orderedAt, $this->eta_min_days, self::CHOOSABLE_DAYS, $daysOff);
     }
 
     /**

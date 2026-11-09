@@ -1,5 +1,6 @@
 import Alpine from 'alpinejs';
 import cart from './store/cart';
+import checkoutForm, { forgetCheckoutDraft } from './store/checkout-form';
 import productCards from './store/product-cards';
 import productListing from './store/product-listing';
 import productPage from './store/product-page';
@@ -22,6 +23,13 @@ Alpine.store('mobileMenu', {
     },
 });
 
+Alpine.data('checkoutForm', checkoutForm);
+// The thank-you page: the order went through, so the checkout draft is no longer needed.
+Alpine.data('orderPlaced', () => ({
+    init() {
+        forgetCheckoutDraft();
+    },
+}));
 Alpine.data('productCards', productCards);
 Alpine.data('productListing', productListing);
 Alpine.data('productPage', productPage);

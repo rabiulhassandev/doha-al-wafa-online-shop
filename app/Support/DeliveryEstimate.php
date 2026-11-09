@@ -24,6 +24,30 @@ final class DeliveryEstimate
     }
 
     /**
+     * Get the delivery days a shopper may pick: the earliest possible day and the delivery days after it.
+     *
+     * @param  list<int>  $daysOff  ISO weekdays with no delivery
+     * @return list<CarbonImmutable>
+     */
+    public static function choosableDays(CarbonImmutable $orderedOn, int $minDays, int $count, array $daysOff): array
+    {
+        $days = [];
+        $day = self::addWorkingDays($orderedOn, $minDays, $daysOff);
+
+        // A same-day area ordered on a day off can first deliver on the next working day.
+        if ($minDays === 0 && count(array_unique($daysOff)) < 7 && in_array($day->dayOfWeekIso, $daysOff, true)) {
+            $day = self::addWorkingDays($day, 1, $daysOff);
+        }
+
+        while (count($days) < $count) {
+            $days[] = $day;
+            $day = self::addWorkingDays($day, 1, $daysOff);
+        }
+
+        return $days;
+    }
+
+    /**
      * @param  list<int>  $daysOff
      */
     private static function addWorkingDays(CarbonImmutable $date, int $days, array $daysOff): CarbonImmutable

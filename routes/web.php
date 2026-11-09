@@ -9,6 +9,7 @@ use App\Http\Controllers\Storefront\CheckoutController;
 use App\Http\Controllers\Storefront\CollectionController;
 use App\Http\Controllers\Storefront\HomeController;
 use App\Http\Controllers\Storefront\LocaleRedirectController;
+use App\Http\Controllers\Storefront\OrderConfirmationController;
 use App\Http\Controllers\Storefront\ProductCardController;
 use App\Http\Controllers\Storefront\ProductController;
 use App\Http\Controllers\Storefront\SearchController;
@@ -39,6 +40,12 @@ Route::prefix('{locale}')
         Route::get('bag', [CartController::class, 'show'])->name('cart.show');
         Route::get('bag/drawer', [CartController::class, 'drawer'])->name('cart.drawer');
         Route::get('checkout', [CheckoutController::class, 'show'])->name('checkout.show');
+        Route::post('checkout', [CheckoutController::class, 'store'])
+            ->middleware('throttle:place-order')
+            ->name('checkout.store');
+        Route::get('orders/{order:number}/thank-you', OrderConfirmationController::class)
+            ->middleware('signed')
+            ->name('orders.thank-you');
 
         Route::middleware('throttle:60,1')->group(function (): void {
             Route::post('bag/items', [CartItemController::class, 'store'])->name('cart.items.store');

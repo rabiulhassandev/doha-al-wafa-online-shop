@@ -165,7 +165,12 @@ class CartService
         return $threshold === null ? null : (int) $threshold;
     }
 
-    private function line(ProductVariant $variant, int $quantity, ?CartItem $item = null): CartLine
+    /**
+     * Price a color and size from the live product. More pieces than can be ordered are lowered
+     * to what is left, in the bag line too when one is given. Expects the variant's product,
+     * product color and size to be loaded or loadable.
+     */
+    public function line(ProductVariant $variant, int $quantity, ?CartItem $item = null): CartLine
     {
         $maxQuantity = $this->maxQuantity($variant);
         $status = match (true) {

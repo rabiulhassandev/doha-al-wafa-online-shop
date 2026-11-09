@@ -85,6 +85,26 @@
                         @endforeach
                     </div>
                 </fieldset>
+                <div class="sm:col-span-2">
+                    <x-admin.toggle
+                        name="preferred_date_enabled"
+                        label="Let shoppers choose a preferred delivery date"
+                        :checked="(bool) $settings['preferred_date_enabled']"
+                        :hint="'Checkout offers the next '.\App\Models\DeliveryZone::CHOOSABLE_DAYS.' delivery days for the shopper\'s area. Choosing one is optional.'"
+                    />
+                </div>
+            </div>
+        </x-admin.card>
+
+        <x-admin.card title="Orders">
+            <div class="max-w-md">
+                <x-admin.input
+                    name="order_alert_email"
+                    type="email"
+                    label="Email new orders to (optional)"
+                    :value="$settings['order_alert_email']"
+                    hint="Each new order is emailed here with the customer's details. Leave empty to send none."
+                />
             </div>
         </x-admin.card>
 

@@ -8,6 +8,7 @@ enum StockMovementReason: string
     case Damaged = 'damaged';
     case Recount = 'recount';
     case StockGrid = 'stock_grid';
+    case OrderPlaced = 'order_placed';
 
     /**
      * Get the label shown in the stock history.
@@ -19,6 +20,7 @@ enum StockMovementReason: string
             self::Damaged => 'Damaged or lost',
             self::Recount => 'Recount',
             self::StockGrid => 'Stock grid edit',
+            self::OrderPlaced => 'Order placed',
         };
     }
 

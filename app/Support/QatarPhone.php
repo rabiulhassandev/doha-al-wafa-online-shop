@@ -6,16 +6,6 @@ final class QatarPhone
 {
     private const COUNTRY_CODE = '974';
 
-    /**
-     * Eastern Arabic and Persian digits that customers may type on Arabic keyboards.
-     */
-    private const ARABIC_DIGITS = [
-        '٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4',
-        '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9',
-        '۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4',
-        '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9',
-    ];
-
     private function __construct(private readonly string $nationalNumber) {}
 
     /**
@@ -26,7 +16,7 @@ final class QatarPhone
      */
     public static function tryParse(?string $input): ?self
     {
-        $digits = preg_replace('/\D+/', '', strtr((string) $input, self::ARABIC_DIGITS));
+        $digits = preg_replace('/\D+/', '', Digits::toWestern((string) $input));
 
         if (str_starts_with($digits, '00'.self::COUNTRY_CODE)) {
             $digits = substr($digits, 5);

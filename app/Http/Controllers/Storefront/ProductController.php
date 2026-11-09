@@ -85,7 +85,7 @@ class ProductController extends Controller
             CarbonImmutable::now(),
             (int) $fastest,
             (int) $slowest,
-            array_map('intval', (array) $this->settings->get('delivery_days_off')),
+            $this->settings->deliveryDaysOff(),
         );
     }
 

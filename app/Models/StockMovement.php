@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * One logged change to a variant's stock.
  */
-#[Fillable(['product_variant_id', 'sku', 'change', 'stock_after', 'reason', 'note', 'user_id'])]
+#[Fillable(['product_variant_id', 'sku', 'change', 'stock_after', 'reason', 'note', 'user_id', 'order_id'])]
 class StockMovement extends Model
 {
     /**
@@ -45,5 +45,15 @@ class StockMovement extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the order that took or returned the stock.
+     *
+     * @return BelongsTo<Order, $this>
+     */
+    public function order(): BelongsTo
+    {
+        return $this->belongsTo(Order::class);
     }
 }

@@ -4,6 +4,7 @@ namespace App\Actions;
 
 use App\Enums\StockMovementReason;
 use App\Exceptions\NotEnoughStockException;
+use App\Models\Order;
 use App\Models\ProductVariant;
 use App\Models\StockMovement;
 use App\Models\User;
@@ -27,12 +28,13 @@ class AdjustStock
         ?User $user = null,
         ?string $note = null,
         bool $clampAtZero = false,
+        ?Order $order = null,
     ): ?StockMovement {
         if ($quantity === 0) {
             return null;
         }
 
-        return $this->apply($variant, $reason, $user, $note, function (ProductVariant $locked) use ($quantity, $clampAtZero): int {
+        return $this->apply($variant, $reason, $user, $note, $order, function (ProductVariant $locked) use ($quantity, $clampAtZero): int {
             $newStock = $locked->stock + $quantity;
 
             if ($newStock < 0 && ! $clampAtZero) {
@@ -48,7 +50,7 @@ class AdjustStock
      */
     public function setTo(ProductVariant $variant, int $count, StockMovementReason $reason, ?User $user = null, ?string $note = null): ?StockMovement
     {
-        return $this->apply($variant, $reason, $user, $note, fn (): int => max(0, $count));
+        return $this->apply($variant, $reason, $user, $note, null, fn (): int => max(0, $count));
     }
 
     /**
@@ -56,9 +58,9 @@ class AdjustStock
      *
      * @param  Closure(ProductVariant): int  $newStockFor
      */
-    private function apply(ProductVariant $variant, StockMovementReason $reason, ?User $user, ?string $note, Closure $newStockFor): ?StockMovement
+    private function apply(ProductVariant $variant, StockMovementReason $reason, ?User $user, ?string $note, ?Order $order, Closure $newStockFor): ?StockMovement
     {
-        return DB::transaction(function () use ($variant, $reason, $user, $note, $newStockFor): ?StockMovement {
+        return DB::transaction(function () use ($variant, $reason, $user, $note, $order, $newStockFor): ?StockMovement {
             $locked = ProductVariant::query()->lockForUpdate()->findOrFail($variant->getKey());
             $newStock = $newStockFor($locked);
             $change = $newStock - $locked->stock;
@@ -81,6 +83,7 @@ class AdjustStock
                 'reason' => $reason,
                 'note' => $note,
                 'user_id' => $user?->id,
+                'order_id' => $order?->id,
             ]);
         });
     }

@@ -42,7 +42,9 @@ class UpdateSettingsRequest extends FormRequest
             'delivery_free_over' => ['nullable', 'decimal:0,2', 'min:0', 'max:100000'],
             'delivery_days_off' => ['array'],
             'delivery_days_off.*' => ['integer', 'between:1,7', 'distinct'],
+            'preferred_date_enabled' => ['required', 'boolean'],
             'max_quantity_per_item' => ['required', 'integer', 'min:1', 'max:50'],
+            'order_alert_email' => ['nullable', 'string', 'email', 'max:255'],
         ];
     }
 
@@ -67,6 +69,7 @@ class UpdateSettingsRequest extends FormRequest
             'delivery_free_over' => 'free delivery amount',
             'delivery_days_off.*' => 'day without delivery',
             'max_quantity_per_item' => 'most of one size per order',
+            'order_alert_email' => 'new order email',
         ];
     }
 
@@ -88,6 +91,7 @@ class UpdateSettingsRequest extends FormRequest
         $freeOver = $values['delivery_free_over'] ?? null;
         $values['delivery_free_over'] = $freeOver === null ? null : Money::toDirhams($freeOver);
         $values['delivery_days_off'] = array_map('intval', $this->validated('delivery_days_off', []));
+        $values['preferred_date_enabled'] = $this->boolean('preferred_date_enabled');
 
         return $values;
     }
