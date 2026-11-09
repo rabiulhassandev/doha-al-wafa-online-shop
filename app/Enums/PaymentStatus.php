@@ -21,4 +21,28 @@ enum PaymentStatus: string
             self::Failed => __('Payment failed'),
         };
     }
+
+    /**
+     * Get the admin badge color for the status.
+     */
+    public function badgeColor(): string
+    {
+        return match ($this) {
+            self::Paid => 'success',
+            self::Refunded, self::Failed => 'danger',
+            self::Pending => 'neutral',
+        };
+    }
+
+    /**
+     * Get every status as filter options keyed by value.
+     *
+     * @return array<string, string>
+     */
+    public static function options(): array
+    {
+        return collect(self::cases())
+            ->mapWithKeys(fn (self $status): array => [$status->value => $status->label()])
+            ->all();
+    }
 }

@@ -4,9 +4,21 @@
 @endpush
 
 @php
+    use App\Enums\OrderStatus;
     use App\Support\Money;
 
     $locale = app()->getLocale();
+    $steps = [
+        [OrderStatus::PendingConfirmation, __('Order placed')],
+        [OrderStatus::Confirmed, __('Confirmed')],
+        [OrderStatus::Packed, __('Packed')],
+        [OrderStatus::OutForDelivery, __('Out for delivery')],
+        [OrderStatus::Delivered, __('Delivered')],
+    ];
+    // A failed delivery attempt shows on the "out for delivery" step.
+    $trackedStatus = $order->status === OrderStatus::DeliveryFailed ? OrderStatus::OutForDelivery : $order->status;
+    $reachedStep = collect($steps)->search(fn (array $step): bool => $step[0] === $trackedStatus);
+    $isStopped = in_array($order->status, [OrderStatus::Cancelled, OrderStatus::Returned], true);
 @endphp
 
 <x-store.layout :title="__('Thank you for your order')">
@@ -20,7 +32,33 @@
                 <p class="mt-2 text-ink-700">{{ __('Your order :number is placed.', ['number' => $order->number]) }}</p>
             </div>
 
-            <div class="mt-6 rounded-2xl bg-maroon-50 p-5 text-maroon-900 sm:p-6">
+            <section class="mt-6 rounded-2xl bg-white p-5 sm:p-6" aria-labelledby="order-status">
+                <h2 id="order-status" class="text-sm font-semibold">
+                    {{ __('Order status') }}:
+                    <span @class(['text-danger-700' => $isStopped || $order->status === OrderStatus::DeliveryFailed, 'text-maroon-700' => ! $isStopped])>{{ $order->status->label() }}</span>
+                </h2>
+
+                @if ($isStopped)
+                    <p class="mt-2 text-sm text-ink-700">
+                        {{ $order->status === OrderStatus::Cancelled ? __('This order was cancelled, so nothing will be delivered.') : __('This order was returned to us.') }}
+                    </p>
+                @else
+                    <ol class="mt-4 grid grid-cols-5 gap-1.5">
+                        @foreach ($steps as $index => [$stepStatus, $stepLabel])
+                            <li @if ($index === $reachedStep) aria-current="step" @endif>
+                                <span @class(['block h-1.5 rounded-full', 'bg-maroon-700' => $index <= $reachedStep, 'bg-sand-200' => $index > $reachedStep])></span>
+                                <span @class(['mt-2 block text-xs leading-tight', 'font-semibold text-ink-900' => $index === $reachedStep, 'text-ink-500' => $index !== $reachedStep])>{{ $stepLabel }}</span>
+                            </li>
+                        @endforeach
+                    </ol>
+                    @if ($order->status === OrderStatus::DeliveryFailed)
+                        <p class="mt-3 text-sm text-danger-700">{{ __('We could not deliver your order. We will contact you to arrange a new time.') }}</p>
+                    @endif
+                @endif
+            </section>
+
+            @unless ($order->status->isClosed())
+            <div class="mt-5 rounded-2xl bg-maroon-50 p-5 text-maroon-900 sm:p-6">
                 <h2 class="font-semibold">{{ __('What happens next') }}</h2>
                 <ol class="mt-3 list-decimal space-y-2 ps-5 text-sm">
                     <li>{{ __('We call or WhatsApp you on :phone to confirm your order.', ['phone' => $order->formattedPhone()]) }}</li>
@@ -34,6 +72,7 @@
                     </x-store.button>
                 @endif
             </div>
+            @endunless
 
             <div class="mt-5 grid gap-5 sm:grid-cols-2">
                 <section class="rounded-2xl bg-white p-5">

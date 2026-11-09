@@ -62,6 +62,21 @@ it('stops working after 30 days', function () {
     $this->get($url)->assertForbidden();
 });
 
+it('shows how far the order has come', function (string $status, array $seen, array $notSeen) {
+    $order = placedOrder(['status' => $status]);
+
+    $this->get($order->confirmationUrl())
+        ->assertOk()
+        ->assertSee($seen, false)
+        ->assertDontSee($notSeen, false);
+})->with([
+    'waiting for confirmation' => ['pending_confirmation', ['Order status', 'Waiting for confirmation', 'What happens next'], ['This order was cancelled']],
+    'out for delivery' => ['out_for_delivery', ['Out for delivery', 'aria-current="step"'], ['This order was cancelled']],
+    'missed delivery' => ['delivery_failed', ['We could not deliver your order. We will contact you to arrange a new time.'], []],
+    'delivered' => ['delivered', ['Delivered'], ['What happens next', 'Confirm on WhatsApp']],
+    'cancelled' => ['cancelled', ['This order was cancelled, so nothing will be delivered.'], ['What happens next', 'aria-current="step"']],
+]);
+
 it('keeps the link working when switching language', function () {
     $order = placedOrder();
 

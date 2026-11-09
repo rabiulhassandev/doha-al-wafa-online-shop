@@ -169,10 +169,14 @@ class CartService
      * Price a color and size from the live product. More pieces than can be ordered are lowered
      * to what is left, in the bag line too when one is given. Expects the variant's product,
      * product color and size to be loaded or loadable.
+     *
+     * @param  bool  $withinShopperLimit  false for the team, who may order past the per-item limit up to the stock left
      */
-    public function line(ProductVariant $variant, int $quantity, ?CartItem $item = null): CartLine
+    public function line(ProductVariant $variant, int $quantity, ?CartItem $item = null, bool $withinShopperLimit = true): CartLine
     {
-        $maxQuantity = $this->maxQuantity($variant);
+        $maxQuantity = $withinShopperLimit
+            ? $this->maxQuantity($variant)
+            : ($this->isPurchasable($variant) ? $variant->stock : 0);
         $status = match (true) {
             $maxQuantity === 0 => CartLineStatus::Unavailable,
             $quantity > $maxQuantity => CartLineStatus::Reduced,

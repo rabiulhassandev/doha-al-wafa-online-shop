@@ -3,7 +3,6 @@
 namespace App\Actions;
 
 use App\Enums\CartLineStatus;
-use App\Enums\OrderChannel;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\StockMovementReason;
@@ -13,7 +12,9 @@ use App\Mail\OrderPlaced;
 use App\Models\Customer;
 use App\Models\DeliveryZone;
 use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\ProductVariant;
+use App\Models\User;
 use App\Services\CartService;
 use App\Services\Payments\PaymentGateways;
 use App\Services\Settings;
@@ -43,12 +44,16 @@ class PlaceOrder
      * Stock, availability and prices are checked again while the stock rows are locked, so two
      * shoppers can never buy the same last piece. Nothing is saved unless the whole order goes through.
      *
+     * Orders the team enters by hand ($placedBy) start confirmed, since the team already spoke to
+     * the customer, and are not held back by the blocked phone list.
+     *
      * @param  array<int, int>  $quantities  pieces wanted, keyed by product variant ID
      * @param  int|null  $expectedSubtotal  the subtotal the shopper saw, in dirhams; any other subtotal stops the order
+     * @param  User|null  $placedBy  the team member entering the order by hand
      *
      * @throws OrderNotPlacedException
      */
-    public function handle(array $quantities, CheckoutDetails $details, ?int $expectedSubtotal = null): Order
+    public function handle(array $quantities, CheckoutDetails $details, ?int $expectedSubtotal = null, ?User $placedBy = null): Order
     {
         $quantities = array_filter($quantities, fn (int $quantity): bool => $quantity > 0);
 
@@ -56,30 +61,39 @@ class PlaceOrder
             throw OrderNotPlacedException::nothingToOrder();
         }
 
-        if (Customer::isBlocked($details->phone)) {
+        if ($placedBy === null && Customer::isBlocked($details->phone)) {
             throw OrderNotPlacedException::blockedPhone();
         }
 
-        $order = DB::transaction(function () use ($quantities, $details, $expectedSubtotal): Order {
-            $summary = $this->lockAndPrice($quantities, $details->deliveryZone);
+        $order = DB::transaction(function () use ($quantities, $details, $expectedSubtotal, $placedBy): Order {
+            $summary = $this->lockAndPrice($quantities, $details->deliveryZone, withinShopperLimit: $placedBy === null);
 
             if ($expectedSubtotal !== null && $summary->subtotal() !== $expectedSubtotal) {
                 throw OrderNotPlacedException::orderChanged();
             }
 
-            $order = $this->createOrder($this->saveCustomer($details), $summary, $details);
+            $order = $this->createOrder($this->saveCustomer($details), $summary, $details, $placedBy);
 
             foreach ($summary->lines as $line) {
-                $order->items()->create($this->itemSnapshot($line));
-                $this->adjustStock->change($line->variant, -$line->quantity, StockMovementReason::OrderPlaced, note: $order->number, order: $order);
+                $order->items()->create(OrderItem::attributesFor($line));
+                $this->adjustStock->change($line->variant, -$line->quantity, StockMovementReason::OrderPlaced, $placedBy, $order->number, order: $order);
             }
 
             $this->paymentGateways->for($details->paymentMethod)->createPayment($order);
 
+            if ($placedBy !== null) {
+                $order->statusHistories()->create([
+                    'from_status' => null,
+                    'to_status' => $order->status,
+                    'note' => "Entered by hand from {$details->channel->label()}.",
+                    'user_id' => $placedBy->id,
+                ]);
+            }
+
             return $order;
         });
 
-        $this->sendEmails($order);
+        $this->sendEmails($order, alertTheTeam: $placedBy === null);
 
         return $order;
     }
@@ -88,8 +102,9 @@ class PlaceOrder
      * Lock the ordered colors and sizes and price them, stopping when one cannot be ordered as asked.
      *
      * @param  array<int, int>  $quantities
+     * @param  bool  $withinShopperLimit  false for orders the team enters, which may pass the per-item limit
      */
-    private function lockAndPrice(array $quantities, DeliveryZone $deliveryZone): CartSummary
+    private function lockAndPrice(array $quantities, DeliveryZone $deliveryZone, bool $withinShopperLimit): CartSummary
     {
         // Locking in ID order keeps two orders for the same pieces from waiting on each other forever.
         $variants = ProductVariant::query()
@@ -100,9 +115,9 @@ class PlaceOrder
             ->load(['product', 'size', 'productColor.color', 'productColor.images'])
             ->keyBy('id');
 
-        $lines = collect($quantities)->map(function (int $quantity, int $variantId) use ($variants): CartLine {
+        $lines = collect($quantities)->map(function (int $quantity, int $variantId) use ($variants, $withinShopperLimit): CartLine {
             $variant = $variants->get($variantId) ?? throw OrderNotPlacedException::orderChanged();
-            $line = $this->cartService->line($variant, $quantity);
+            $line = $this->cartService->line($variant, $quantity, withinShopperLimit: $withinShopperLimit);
 
             if ($line->status !== CartLineStatus::Available) {
                 throw OrderNotPlacedException::notEnoughStock($line);
@@ -135,24 +150,25 @@ class PlaceOrder
         return $customer;
     }
 
-    private function createOrder(Customer $customer, CartSummary $summary, CheckoutDetails $details): Order
+    private function createOrder(Customer $customer, CartSummary $summary, CheckoutDetails $details, ?User $placedBy): Order
     {
         $placedAt = CarbonImmutable::now();
         $zone = $details->deliveryZone;
         [$estimateFrom, $estimateTo] = $zone->deliveryWindow($placedAt, $this->settings->deliveryDaysOff());
+        $deliveryFee = $details->deliveryFee ?? $summary->deliveryFee();
 
         $order = $customer->orders()->create([
             'checkout_token' => $details->checkoutToken,
-            'channel' => OrderChannel::Web,
-            'status' => OrderStatus::PendingConfirmation,
+            'channel' => $details->channel,
+            'status' => $placedBy === null ? OrderStatus::PendingConfirmation : OrderStatus::Confirmed,
             'payment_method' => $details->paymentMethod,
             'payment_status' => PaymentStatus::Pending,
             'currency' => 'QAR',
             'subtotal' => $summary->subtotal(),
             'discount_total' => 0,
-            'delivery_fee' => $summary->deliveryFee(),
+            'delivery_fee' => $deliveryFee,
             'tax_total' => 0,
-            'grand_total' => $summary->total(),
+            'grand_total' => $summary->subtotal() + $deliveryFee,
             'customer_name' => $details->name,
             'customer_phone' => $details->phone->e164(),
             'customer_email' => $details->email,
@@ -182,36 +198,7 @@ class PlaceOrder
         return $order;
     }
 
-    /**
-     * Copy what was sold, so the order reads the same after the product changes or is deleted.
-     *
-     * @return array<string, mixed>
-     */
-    private function itemSnapshot(CartLine $line): array
-    {
-        $variant = $line->variant;
-        $productColor = $variant->productColor;
-
-        return [
-            'product_id' => $variant->product_id,
-            'product_variant_id' => $variant->id,
-            'product_name_en' => $variant->product->name_en,
-            'product_name_ar' => $variant->product->name_ar,
-            'color_name_en' => $productColor->displayName('en'),
-            'color_name_ar' => $productColor->displayName('ar'),
-            'color_hex' => $productColor->color->hex,
-            'size_name_en' => $variant->size->name_en,
-            'size_name_ar' => $variant->size->name_ar,
-            'sku' => $variant->sku,
-            'image_path' => $productColor->images->first()?->path(400),
-            'unit_price' => $line->unitPrice,
-            'compare_at_price' => $line->compareAtPrice,
-            'quantity' => $line->quantity,
-            'line_total' => $line->total(),
-        ];
-    }
-
-    private function sendEmails(Order $order): void
+    private function sendEmails(Order $order, bool $alertTheTeam): void
     {
         if ($order->customer_email !== null) {
             Mail::to($order->customer_email, $order->customer_name)->locale($order->locale)->send(new OrderPlaced($order));
@@ -219,7 +206,7 @@ class PlaceOrder
 
         $alertEmail = $this->settings->get('order_alert_email');
 
-        if (filled($alertEmail)) {
+        if ($alertTheTeam && filled($alertEmail)) {
             Mail::to($alertEmail)->locale('en')->send(new NewOrderAlert($order));
         }
     }

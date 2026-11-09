@@ -20,7 +20,7 @@ class StockMovementController extends Controller
         $reason = StockMovementReason::tryFrom((string) $request->query('reason'));
 
         $movements = StockMovement::query()
-            ->with(['user', 'productVariant.product', 'productVariant.productColor.color', 'productVariant.size'])
+            ->with(['user', 'order', 'productVariant.product', 'productVariant.productColor.color', 'productVariant.size'])
             ->when($search !== '', fn (Builder $query) => $query->where('sku', 'like', "%{$search}%"))
             ->when($reason !== null, fn (Builder $query) => $query->where('reason', $reason))
             ->latest()

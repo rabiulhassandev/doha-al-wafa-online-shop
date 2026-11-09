@@ -1,4 +1,4 @@
-@props(['href', 'icon', 'active' => false])
+@props(['href', 'icon', 'active' => false, 'count' => 0])
 
 <a
     href="{{ $href }}"
@@ -11,4 +11,7 @@
 >
     <x-icon :name="$icon" class="size-5" />
     {{ $slot }}
+    @if ($count > 0)
+        <span class="ms-auto inline-flex min-w-6 items-center justify-center rounded-full bg-maroon-700 px-1.5 text-xs font-semibold text-white tabular-nums">{{ $count }}</span>
+    @endif
 </a>

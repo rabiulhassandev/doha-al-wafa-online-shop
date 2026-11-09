@@ -10,6 +10,20 @@
             Dashboard
         </x-admin.nav-link>
 
+        @can('manage-orders')
+            <p class="px-3 pt-6 pb-2 text-xs font-medium tracking-wider text-sand-300/60 uppercase">Sales</p>
+
+            <x-admin.nav-link :href="route('admin.orders.index')" icon="bag" :active="request()->routeIs('admin.orders.*')" :count="$ordersWaiting">
+                Orders
+                @if ($ordersWaiting > 0)
+                    <span class="sr-only">({{ $ordersWaiting }} waiting for confirmation)</span>
+                @endif
+            </x-admin.nav-link>
+            <x-admin.nav-link :href="route('admin.customers.index')" icon="users" :active="request()->routeIs('admin.customers.*')">
+                Customers
+            </x-admin.nav-link>
+        @endcan
+
         @can('manage-catalog')
             <p class="px-3 pt-6 pb-2 text-xs font-medium tracking-wider text-sand-300/60 uppercase">Catalog</p>
 

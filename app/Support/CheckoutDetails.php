@@ -2,12 +2,13 @@
 
 namespace App\Support;
 
+use App\Enums\OrderChannel;
 use App\Enums\PaymentMethod;
 use App\Models\DeliveryZone;
 use Carbon\CarbonImmutable;
 
 /**
- * Who is ordering, where to deliver and how they pay, as entered at checkout.
+ * Who is ordering, where to deliver and how they pay, as entered at checkout or by the team.
  */
 final readonly class CheckoutDetails
 {
@@ -30,5 +31,8 @@ final readonly class CheckoutDetails
         public ?string $checkoutToken = null,
         public ?string $ipAddress = null,
         public ?string $userAgent = null,
+        public OrderChannel $channel = OrderChannel::Web,
+        // Dirhams. Set by the team on orders entered by hand; null charges the area's usual fee.
+        public ?int $deliveryFee = null,
     ) {}
 }

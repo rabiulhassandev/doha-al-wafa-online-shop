@@ -15,6 +15,7 @@ use App\Http\Controllers\Storefront\ProductController;
 use App\Http\Controllers\Storefront\SearchController;
 use App\Http\Controllers\Storefront\SearchSuggestionController;
 use App\Http\Controllers\Storefront\ShopController;
+use App\Http\Controllers\Storefront\TrackOrderController;
 use App\Http\Controllers\Storefront\WishlistController;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Support\Facades\Route;
@@ -46,6 +47,10 @@ Route::prefix('{locale}')
         Route::get('orders/{order:number}/thank-you', OrderConfirmationController::class)
             ->middleware('signed')
             ->name('orders.thank-you');
+        Route::get('track', [TrackOrderController::class, 'show'])->name('track.show');
+        Route::post('track', [TrackOrderController::class, 'lookup'])
+            ->middleware('throttle:10,1')
+            ->name('track.lookup');
 
         Route::middleware('throttle:60,1')->group(function (): void {
             Route::post('bag/items', [CartItemController::class, 'store'])->name('cart.items.store');

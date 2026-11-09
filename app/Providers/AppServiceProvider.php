@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Models\User;
 use App\Services\Settings;
 use App\Support\QatarPhone;
+use App\View\Composers\AdminNavigationComposer;
 use App\View\Composers\CartCountComposer;
 use App\View\Composers\StoreNavigationComposer;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -44,6 +45,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('access-admin', fn (User $user): bool => $user->canAccessAdmin());
         Gate::define('manage-store', fn (User $user): bool => $user->isOwner());
         Gate::define('manage-catalog', fn (User $user): bool => $user->canAccessAdmin());
+        Gate::define('manage-orders', fn (User $user): bool => $user->canAccessAdmin());
 
         $this->configureOrderRateLimits();
 
@@ -55,6 +57,7 @@ class AppServiceProvider extends ServiceProvider
             StoreNavigationComposer::class,
         );
         View::composer(['components.store.header', 'components.store.cart-drawer'], CartCountComposer::class);
+        View::composer('components.admin.nav', AdminNavigationComposer::class);
     }
 
     /**

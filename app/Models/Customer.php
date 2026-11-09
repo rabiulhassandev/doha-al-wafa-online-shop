@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * Someone who ordered, created automatically from their first order. The phone number (E.164) identifies them.
  */
-#[Fillable(['name', 'phone', 'email', 'locale', 'is_blocked'])]
+#[Fillable(['name', 'phone', 'email', 'locale', 'is_blocked', 'notes'])]
 class Customer extends Model
 {
     /** @use HasFactory<CustomerFactory> */

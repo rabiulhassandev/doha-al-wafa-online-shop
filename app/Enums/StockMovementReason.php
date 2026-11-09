@@ -9,6 +9,9 @@ enum StockMovementReason: string
     case Recount = 'recount';
     case StockGrid = 'stock_grid';
     case OrderPlaced = 'order_placed';
+    case OrderEdited = 'order_edited';
+    case OrderCancelled = 'order_cancelled';
+    case OrderReturned = 'order_returned';
 
     /**
      * Get the label shown in the stock history.
@@ -21,6 +24,9 @@ enum StockMovementReason: string
             self::Recount => 'Recount',
             self::StockGrid => 'Stock grid edit',
             self::OrderPlaced => 'Order placed',
+            self::OrderEdited => 'Order changed',
+            self::OrderCancelled => 'Order cancelled',
+            self::OrderReturned => 'Order returned',
         };
     }
 

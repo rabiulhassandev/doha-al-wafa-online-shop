@@ -1,11 +1,18 @@
 <?php
 
+use App\Actions\PlaceOrder;
+use App\Enums\PaymentMethod;
 use App\Models\Color;
+use App\Models\DeliveryZone;
+use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductColor;
 use App\Models\ProductImage;
 use App\Models\ProductVariant;
 use App\Models\Size;
+use App\Models\User;
+use App\Support\CheckoutDetails;
+use App\Support\QatarPhone;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -51,6 +58,43 @@ expect()->extend('toBeOne', function () {
 | global functions to help you to reduce the number of lines of code in your test files.
 |
 */
+
+/**
+ * Build checkout details, delivering to a new area with a QAR 25 fee unless one is given.
+ *
+ * @param  array<string, mixed>  $overrides  named CheckoutDetails arguments
+ */
+function checkoutDetails(array $overrides = []): CheckoutDetails
+{
+    return new CheckoutDetails(...[
+        'name' => 'Fatima Al-Kuwari',
+        'phone' => QatarPhone::tryParse('5555 1234'),
+        'email' => null,
+        'deliveryZone' => $overrides['deliveryZone'] ?? DeliveryZone::factory()->create(['fee' => 2500]),
+        'zoneNumber' => '45',
+        'streetNumber' => '330',
+        'buildingNumber' => '12',
+        'unit' => null,
+        'landmark' => null,
+        'latitude' => null,
+        'longitude' => null,
+        'preferredDate' => null,
+        'note' => null,
+        'paymentMethod' => PaymentMethod::CashOnDelivery,
+        'locale' => 'en',
+        ...$overrides,
+    ]);
+}
+
+/**
+ * Place an order through the real action, taking stock as the website does.
+ *
+ * @param  array<int, int>  $quantities  pieces keyed by product variant ID
+ */
+function placeOrder(array $quantities, ?CheckoutDetails $details = null, ?int $expectedSubtotal = null, ?User $placedBy = null): Order
+{
+    return app(PlaceOrder::class)->handle($quantities, $details ?? checkoutDetails(), $expectedSubtotal, $placedBy);
+}
 
 /**
  * Create a product shoppers can see, with a photo for each color and stock for each size.

@@ -10,3 +10,6 @@ Artisan::command('inspire', function () {
 
 // Delete bags nobody has touched for 30 days (see App\Models\Cart::prunable()).
 Schedule::command('model:prune')->daily();
+
+// Morning email of the sizes running low, in the store's time zone (Asia/Qatar).
+Schedule::command('shop:send-low-stock-digest')->dailyAt('08:00');

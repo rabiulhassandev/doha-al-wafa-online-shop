@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\Translatable;
+use App\Support\CartLine;
 use Database\Factories\OrderItemFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -36,6 +37,36 @@ class OrderItem extends Model
             'compare_at_price' => 'integer',
             'quantity' => 'integer',
             'line_total' => 'integer',
+        ];
+    }
+
+    /**
+     * Get the attributes that copy what is sold on a line, so the order reads the same after the
+     * product changes or is deleted.
+     *
+     * @return array<string, mixed>
+     */
+    public static function attributesFor(CartLine $line): array
+    {
+        $variant = $line->variant;
+        $productColor = $variant->productColor;
+
+        return [
+            'product_id' => $variant->product_id,
+            'product_variant_id' => $variant->id,
+            'product_name_en' => $variant->product->name_en,
+            'product_name_ar' => $variant->product->name_ar,
+            'color_name_en' => $productColor->displayName('en'),
+            'color_name_ar' => $productColor->displayName('ar'),
+            'color_hex' => $productColor->color->hex,
+            'size_name_en' => $variant->size->name_en,
+            'size_name_ar' => $variant->size->name_ar,
+            'sku' => $variant->sku,
+            'image_path' => $productColor->images->first()?->path(400),
+            'unit_price' => $line->unitPrice,
+            'compare_at_price' => $line->compareAtPrice,
+            'quantity' => $line->quantity,
+            'line_total' => $line->total(),
         ];
     }
 

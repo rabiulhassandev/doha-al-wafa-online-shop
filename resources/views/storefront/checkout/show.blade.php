@@ -81,34 +81,7 @@
                     <div class="mt-5 grid gap-5">
                         <x-store.text-field name="name" :label="__('Full name')" autocomplete="name" maxlength="120" required />
 
-                        <div>
-                            <label for="phone" class="block text-sm font-medium">{{ __('Mobile number') }}</label>
-                            <div @class([
-                                'mt-1.5 flex h-12 overflow-hidden rounded-xl border bg-white focus-within:ring-2',
-                                'border-danger-700 focus-within:ring-danger-50' => $errors->has('phone'),
-                                'border-sand-300 focus-within:border-maroon-700 focus-within:ring-maroon-100' => ! $errors->has('phone'),
-                            ]) dir="ltr">
-                                <span class="flex items-center border-e border-sand-200 bg-sand-50 px-3 text-sm text-ink-500">+974</span>
-                                <input
-                                    id="phone"
-                                    name="phone"
-                                    type="tel"
-                                    inputmode="tel"
-                                    autocomplete="tel-national"
-                                    maxlength="20"
-                                    placeholder="5555 1234"
-                                    value="{{ old('phone') }}"
-                                    required
-                                    aria-describedby="phone-hint{{ $errors->has('phone') ? ' phone-error' : '' }}"
-                                    @if ($errors->has('phone')) aria-invalid="true" @endif
-                                    class="w-full min-w-0 bg-transparent px-4 text-base focus:outline-none"
-                                >
-                            </div>
-                            <p id="phone-hint" class="mt-1.5 text-xs text-ink-500">{{ __('We will call or WhatsApp you on this number to confirm your order.') }}</p>
-                            @error('phone')
-                                <p id="phone-error" class="mt-1.5 text-xs font-medium text-danger-700">{{ $message }}</p>
-                            @enderror
-                        </div>
+                        <x-store.phone-field :label="__('Mobile number')" :hint="__('We will call or WhatsApp you on this number to confirm your order.')" required />
                     </div>
                 </section>
 

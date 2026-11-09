@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
+use App\Models\Order;
 use App\Services\Settings;
 use Illuminate\Contracts\View\View;
 
@@ -11,7 +13,7 @@ class DashboardController extends Controller
     private const SOCIAL_SETTINGS = ['instagram_url', 'tiktok_url', 'facebook_url', 'snapchat_url'];
 
     /**
-     * Show the admin dashboard with the store setup checklist.
+     * Show the admin dashboard: today's orders and the store setup checklist.
      */
     public function __invoke(Settings $settings): View
     {
@@ -25,6 +27,16 @@ class DashboardController extends Controller
             ],
         ];
 
-        return view('admin.dashboard', ['setupTasks' => $setupTasks]);
+        $todaysOrders = Order::query()->where('placed_at', '>=', today())->whereNot('status', OrderStatus::Cancelled);
+
+        return view('admin.dashboard', [
+            'setupTasks' => $setupTasks,
+            'orderStats' => [
+                'waiting' => Order::query()->where('status', OrderStatus::PendingConfirmation)->count(),
+                'todayCount' => (clone $todaysOrders)->count(),
+                'todayTotal' => (int) (clone $todaysOrders)->sum('grand_total'),
+                'outForDelivery' => Order::query()->where('status', OrderStatus::OutForDelivery)->count(),
+            ],
+        ]);
     }
 }

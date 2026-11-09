@@ -5,9 +5,17 @@ use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CollectionController;
 use App\Http\Controllers\Admin\ColorController;
+use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DeliveryZoneController;
 use App\Http\Controllers\Admin\InventoryController;
+use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\OrderDocumentController;
+use App\Http\Controllers\Admin\OrderExportController;
+use App\Http\Controllers\Admin\OrderItemController;
+use App\Http\Controllers\Admin\OrderNoteController;
+use App\Http\Controllers\Admin\OrderPaymentController;
+use App\Http\Controllers\Admin\OrderStatusController;
 use App\Http\Controllers\Admin\ProductColorController;
 use App\Http\Controllers\Admin\ProductColorPositionController;
 use App\Http\Controllers\Admin\ProductController;
@@ -22,6 +30,7 @@ use App\Http\Controllers\Admin\SizeGuideController;
 use App\Http\Controllers\Admin\StaffController;
 use App\Http\Controllers\Admin\StockAdjustmentController;
 use App\Http\Controllers\Admin\StockMovementController;
+use App\Http\Controllers\Admin\VariantSearchController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -43,6 +52,27 @@ Route::middleware(['auth', 'can:access-admin'])->group(function (): void {
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 
     Route::get('/', DashboardController::class)->name('dashboard');
+
+    Route::middleware('can:manage-orders')->group(function (): void {
+        Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
+        Route::get('orders/export', OrderExportController::class)->name('orders.export');
+        Route::get('orders/create', [OrderController::class, 'create'])->name('orders.create');
+        Route::post('orders', [OrderController::class, 'store'])->name('orders.store');
+        Route::get('orders/{order:number}', [OrderController::class, 'show'])->name('orders.show');
+        Route::put('orders/{order:number}/status', OrderStatusController::class)->name('orders.status.update');
+        Route::put('orders/{order:number}/payment', OrderPaymentController::class)->name('orders.payment.update');
+        Route::put('orders/{order:number}/note', OrderNoteController::class)->name('orders.note.update');
+        Route::get('orders/{order:number}/items', [OrderItemController::class, 'edit'])->name('orders.items.edit');
+        Route::put('orders/{order:number}/items', [OrderItemController::class, 'update'])->name('orders.items.update');
+        Route::get('orders/{order:number}/invoice', [OrderDocumentController::class, 'invoice'])->name('orders.invoice');
+        Route::get('orders/{order:number}/packing-slip', [OrderDocumentController::class, 'packingSlip'])->name('orders.packing-slip');
+
+        Route::get('variants/search', VariantSearchController::class)->name('variants.search');
+
+        Route::get('customers', [CustomerController::class, 'index'])->name('customers.index');
+        Route::get('customers/{customer}', [CustomerController::class, 'show'])->name('customers.show');
+        Route::put('customers/{customer}', [CustomerController::class, 'update'])->name('customers.update');
+    });
 
     Route::middleware('can:manage-catalog')->group(function (): void {
         Route::resource('products', ProductController::class)->except('show');

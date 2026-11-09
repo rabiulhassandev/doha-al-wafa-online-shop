@@ -29,6 +29,7 @@
                     <li><a href="{{ route('category.show', $category) }}" class="hover:text-maroon-700">{{ $category->translated('name') }}</a></li>
                 @endforeach
                 <li><a href="{{ route('wishlist') }}" class="hover:text-maroon-700">{{ __('Wishlist') }}</a></li>
+                <li><a href="{{ route('track.show') }}" class="hover:text-maroon-700">{{ __('Track your order') }}</a></li>
             </ul>
         </div>
 

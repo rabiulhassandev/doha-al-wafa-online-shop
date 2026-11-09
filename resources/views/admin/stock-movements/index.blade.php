@@ -38,7 +38,9 @@
                 </td>
                 <td class="px-4 py-3">
                     {{ $movement->reason->label() }}
-                    @if ($movement->note)
+                    @if ($movement->order)
+                        <a href="{{ route('admin.orders.show', $movement->order) }}" class="block text-xs font-medium text-maroon-700 hover:underline">Order {{ $movement->order->number }}</a>
+                    @elseif ($movement->note)
                         <p class="text-xs text-ink-500">{{ $movement->note }}</p>
                     @endif
                 </td>

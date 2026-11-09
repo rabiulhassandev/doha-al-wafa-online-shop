@@ -1,6 +1,6 @@
 <?php
 
-use App\Actions\PlaceOrder;
+use App\Enums\OrderChannel;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
@@ -9,52 +9,14 @@ use App\Exceptions\OrderNotPlacedException;
 use App\Mail\NewOrderAlert;
 use App\Mail\OrderPlaced;
 use App\Models\Customer;
-use App\Models\DeliveryZone;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\StockMovement;
+use App\Models\User;
 use App\Services\Settings;
-use App\Support\CheckoutDetails;
 use App\Support\QatarPhone;
 use Illuminate\Support\Facades\Mail;
-
-/**
- * Build checkout details, delivering to a new area with a QAR 25 fee unless one is given.
- *
- * @param  array<string, mixed>  $overrides  named CheckoutDetails arguments
- */
-function checkoutDetails(array $overrides = []): CheckoutDetails
-{
-    return new CheckoutDetails(...[
-        'name' => 'Fatima Al-Kuwari',
-        'phone' => QatarPhone::tryParse('5555 1234'),
-        'email' => null,
-        'deliveryZone' => $overrides['deliveryZone'] ?? DeliveryZone::factory()->create(['fee' => 2500]),
-        'zoneNumber' => '45',
-        'streetNumber' => '330',
-        'buildingNumber' => '12',
-        'unit' => null,
-        'landmark' => null,
-        'latitude' => null,
-        'longitude' => null,
-        'preferredDate' => null,
-        'note' => null,
-        'paymentMethod' => PaymentMethod::CashOnDelivery,
-        'locale' => 'en',
-        ...$overrides,
-    ]);
-}
-
-/**
- * Place an order through the action.
- *
- * @param  array<int, int>  $quantities  pieces keyed by product variant ID
- */
-function placeOrder(array $quantities, ?CheckoutDetails $details = null, ?int $expectedSubtotal = null): Order
-{
-    return app(PlaceOrder::class)->handle($quantities, $details ?? checkoutDetails(), $expectedSubtotal);
-}
 
 /**
  * Find a product's variant by color and size slug.
@@ -202,4 +164,56 @@ it('sends no emails without an address to send them to', function () {
     placeOrder([$variant->id => 1]);
 
     Mail::assertNothingQueued();
+});
+
+describe('orders the team enters by hand', function () {
+    it('starts them confirmed and records who entered them', function () {
+        $user = User::factory()->staff()->create(['name' => 'Mariam']);
+        $variant = listedProduct(stockByColor: ['navy' => ['56' => 3]])->variants()->sole();
+
+        $order = placeOrder([$variant->id => 1], checkoutDetails(['channel' => OrderChannel::WhatsApp]), placedBy: $user);
+
+        expect([$order->status, $order->channel])->toBe([OrderStatus::Confirmed, OrderChannel::WhatsApp]);
+        $history = $order->statusHistories()->sole();
+        expect([$history->from_status, $history->to_status, $history->user_id])->toBe([null, OrderStatus::Confirmed, $user->id]);
+        expect($history->note)->toBe('Entered by hand from WhatsApp.');
+        expect(StockMovement::query()->sole()->user_id)->toBe($user->id);
+        expect($variant->refresh()->stock)->toBe(2);
+    });
+
+    it('charges the delivery fee the team agreed', function () {
+        $variant = listedProduct(['price' => 18500])->variants()->sole();
+
+        $order = placeOrder([$variant->id => 1], checkoutDetails(['deliveryFee' => 0]), placedBy: User::factory()->staff()->create());
+
+        expect([$order->delivery_fee, $order->grand_total])->toBe([0, 18500]);
+    });
+
+    it('accepts phone numbers blocked from ordering online', function () {
+        Customer::factory()->blocked()->create(['phone' => '+97455551234']);
+        $variant = listedProduct()->variants()->sole();
+
+        placeOrder([$variant->id => 1], placedBy: User::factory()->staff()->create());
+
+        $this->assertDatabaseCount('orders', 1);
+    });
+
+    it('lets the team order past the per-item limit', function () {
+        app(Settings::class)->set(['max_quantity_per_item' => 3]);
+        $variant = listedProduct(stockByColor: ['navy' => ['56' => 20]])->variants()->sole();
+
+        $order = placeOrder([$variant->id => 12], placedBy: User::factory()->staff()->create());
+
+        expect($order->items()->sole()->quantity)->toBe(12);
+    });
+
+    it('does not alert the team about orders they entered themselves', function () {
+        app(Settings::class)->set(['order_alert_email' => 'orders@example.com']);
+        $variant = listedProduct()->variants()->sole();
+
+        placeOrder([$variant->id => 1], checkoutDetails(['email' => 'fatima@example.com']), placedBy: User::factory()->staff()->create());
+
+        Mail::assertQueued(OrderPlaced::class);
+        Mail::assertNotQueued(NewOrderAlert::class);
+    });
 });

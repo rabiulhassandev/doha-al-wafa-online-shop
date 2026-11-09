@@ -96,14 +96,14 @@
             </div>
         </x-admin.card>
 
-        <x-admin.card title="Orders">
+        <x-admin.card title="Store alerts">
             <div class="max-w-md">
                 <x-admin.input
                     name="order_alert_email"
                     type="email"
-                    label="Email new orders to (optional)"
+                    label="Email store alerts to (optional)"
                     :value="$settings['order_alert_email']"
-                    hint="Each new order is emailed here with the customer's details. Leave empty to send none."
+                    hint="Each new website order, and a summary of the sizes running low every morning at 8:00. Leave empty to send none."
                 />
             </div>
         </x-admin.card>

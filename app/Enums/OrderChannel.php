@@ -11,7 +11,6 @@ enum OrderChannel: string
     case WhatsApp = 'whatsapp';
     case Instagram = 'instagram';
     case Phone = 'phone';
-    case WalkIn = 'walk_in';
 
     /**
      * Get the label shown in the admin panel.
@@ -23,7 +22,19 @@ enum OrderChannel: string
             self::WhatsApp => 'WhatsApp',
             self::Instagram => 'Instagram',
             self::Phone => 'Phone call',
-            self::WalkIn => 'Walk-in',
         };
+    }
+
+    /**
+     * Get the channels the team can enter orders for, as select options keyed by value.
+     *
+     * @return array<string, string>
+     */
+    public static function manualOptions(): array
+    {
+        return collect(self::cases())
+            ->reject(fn (self $channel): bool => $channel === self::Web)
+            ->mapWithKeys(fn (self $channel): array => [$channel->value => $channel->label()])
+            ->all();
     }
 }

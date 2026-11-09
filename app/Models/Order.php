@@ -7,6 +7,7 @@ use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Models\Concerns\Translatable;
+use App\Support\Digits;
 use App\Support\QatarPhone;
 use Database\Factories\OrderFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -27,7 +28,7 @@ use Illuminate\Support\Facades\URL;
     'delivery_zone_id', 'delivery_zone_name_en', 'delivery_zone_name_ar',
     'zone_number', 'street_number', 'building_number', 'unit', 'landmark', 'latitude', 'longitude',
     'preferred_delivery_date', 'delivery_estimate_from', 'delivery_estimate_to',
-    'customer_note', 'locale', 'ip_address', 'user_agent', 'placed_at',
+    'customer_note', 'admin_note', 'locale', 'ip_address', 'user_agent', 'placed_at',
 ])]
 class Order extends Model
 {
@@ -81,14 +82,14 @@ class Order extends Model
     }
 
     /**
-     * Get the private, signed link to the order's thank-you page, in the language it was placed in.
+     * Get the private, signed link to the order's page, in the language it was placed in unless another is given.
      */
-    public function confirmationUrl(): string
+    public function confirmationUrl(?string $locale = null): string
     {
         return URL::temporarySignedRoute(
             'orders.thank-you',
             now()->addDays(self::CONFIRMATION_LINK_DAYS),
-            ['locale' => $this->locale, 'order' => $this],
+            ['locale' => $locale ?? $this->locale, 'order' => $this],
         );
     }
 
@@ -130,6 +131,26 @@ class Order extends Model
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
+    }
+
+    /**
+     * Get the status changes, oldest first.
+     *
+     * @return HasMany<OrderStatusHistory, $this>
+     */
+    public function statusHistories(): HasMany
+    {
+        return $this->hasMany(OrderStatusHistory::class)->oldest()->orderBy('id');
+    }
+
+    /**
+     * Find an order from the number a customer typed, such as "DW-10001", "dw 10001" or "10001".
+     */
+    public static function findByTypedNumber(string $typed): ?self
+    {
+        $digits = preg_replace('/\D+/', '', Digits::toWestern($typed));
+
+        return $digits === '' ? null : static::query()->firstWhere('number', self::NUMBER_PREFIX.$digits);
     }
 
     /**
