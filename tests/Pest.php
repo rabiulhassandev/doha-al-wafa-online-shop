@@ -1,6 +1,13 @@
 <?php
 
+use App\Models\Color;
+use App\Models\Product;
+use App\Models\ProductColor;
+use App\Models\ProductImage;
+use App\Models\ProductVariant;
+use App\Models\Size;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 /*
@@ -45,7 +52,33 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+/**
+ * Create a product shoppers can see, with a photo for each color and stock for each size.
+ *
+ * Colors and sizes are matched by slug, so products in one test share them.
+ *
+ * @param  array<string, mixed>  $attributes
+ * @param  array<string, array<string|int, int>>  $stockByColor  e.g. ['navy' => ['56' => 3, '58' => 0]]
+ */
+function listedProduct(array $attributes = [], array $stockByColor = ['navy' => ['56' => 3]]): Product
 {
-    // ..
+    $product = Product::factory()->active()->create($attributes);
+    $isFirstColor = true;
+
+    foreach ($stockByColor as $colorSlug => $stockBySize) {
+        $color = Color::query()->firstWhere('slug', $colorSlug)
+            ?? Color::factory()->create(['slug' => $colorSlug, 'name_en' => Str::title($colorSlug)]);
+        $productColor = ProductColor::factory()->for($product)->for($color)->create(['is_default' => $isFirstColor]);
+        ProductImage::factory()->for($productColor)->create();
+
+        foreach ($stockBySize as $sizeSlug => $stock) {
+            $size = Size::query()->firstWhere('slug', (string) $sizeSlug)
+                ?? Size::factory()->create(['slug' => (string) $sizeSlug, 'name_en' => (string) $sizeSlug]);
+            ProductVariant::factory()->for($productColor)->for($product)->for($size)->inStock($stock)->create();
+        }
+
+        $isFirstColor = false;
+    }
+
+    return $product;
 }

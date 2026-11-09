@@ -4,9 +4,11 @@ namespace App\Providers;
 
 use App\Models\User;
 use App\Services\Settings;
+use App\View\Composers\StoreNavigationComposer;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Intervention\Image\Drivers\Gd\Driver as GdDriver;
@@ -39,5 +41,10 @@ class AppServiceProvider extends ServiceProvider
 
         // Admin team routes only resolve team members, so customer accounts return 404.
         Route::bind('staff', fn (string $value): User => User::query()->staff()->findOrFail($value));
+
+        View::composer(
+            ['components.store.header', 'components.store.mobile-menu', 'components.store.footer'],
+            StoreNavigationComposer::class,
+        );
     }
 }

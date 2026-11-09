@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\SizeGroup;
+use App\Models\Concerns\Translatable;
 use Database\Factories\SizeFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Scope;
@@ -15,7 +16,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Size extends Model
 {
     /** @use HasFactory<SizeFactory> */
-    use HasFactory;
+    use HasFactory, Translatable;
 
     /**
      * The model's default values for attributes.

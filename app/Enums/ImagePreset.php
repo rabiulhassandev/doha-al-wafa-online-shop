@@ -7,6 +7,8 @@ enum ImagePreset: string
     case CategoryImage = 'categories';
     case CollectionBanner = 'collections';
     case ColorSwatch = 'swatches';
+    case BannerDesktop = 'banners';
+    case BannerMobile = 'banners/mobile';
 
     /**
      * Get the storage directory for images of this kind.
@@ -25,6 +27,8 @@ enum ImagePreset: string
             self::CategoryImage => 800,
             self::CollectionBanner => 1920,
             self::ColorSwatch => 160,
+            self::BannerDesktop => 1920,
+            self::BannerMobile => 1080,
         };
     }
 

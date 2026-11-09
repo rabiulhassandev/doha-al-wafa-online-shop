@@ -4,6 +4,9 @@ namespace App\Models;
 
 use Database\Factories\ProductColorFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -99,6 +102,55 @@ class ProductColor extends Model
      */
     public function nameEn(): string
     {
-        return $this->label_en ?: $this->color->name_en;
+        return $this->displayName('en');
+    }
+
+    /**
+     * Get the name shoppers see: this product's custom label, or the palette color name.
+     */
+    public function displayName(?string $locale = null): string
+    {
+        $locale ??= app()->getLocale();
+
+        return $this->getAttribute("label_{$locale}") ?: $this->color->translated('name', $locale);
+    }
+
+    /**
+     * Scope the query to colors shoppers can choose: shown, photographed and offered in a size.
+     *
+     * @param  Builder<self>  $query
+     */
+    #[Scope]
+    protected function listed(Builder $query): void
+    {
+        $query->where('is_active', true)
+            ->whereHas('images')
+            ->whereHas('variants', fn (Builder $query) => $query->where('is_active', true));
+    }
+
+    /**
+     * Determine whether shoppers can choose this color. Expects images and variants loaded.
+     */
+    public function isListed(): bool
+    {
+        return $this->is_active && $this->images->isNotEmpty() && $this->offeredVariants()->isNotEmpty();
+    }
+
+    /**
+     * Get the sizes this color is sold in. Expects variants loaded.
+     *
+     * @return EloquentCollection<int, ProductVariant>
+     */
+    public function offeredVariants(): EloquentCollection
+    {
+        return $this->variants->where('is_active', true)->values();
+    }
+
+    /**
+     * Determine whether any offered size of this color is in stock. Expects variants loaded.
+     */
+    public function isInStock(): bool
+    {
+        return $this->offeredVariants()->contains(fn (ProductVariant $variant): bool => $variant->stock > 0);
     }
 }

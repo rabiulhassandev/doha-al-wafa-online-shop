@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AuthenticatedSessionController;
+use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CollectionController;
 use App\Http\Controllers\Admin\ColorController;
@@ -72,6 +73,8 @@ Route::middleware(['auth', 'can:access-admin'])->group(function (): void {
         Route::resource('colors', ColorController::class)->except('show');
         Route::resource('sizes', SizeController::class)->except('show');
         Route::resource('size-guides', SizeGuideController::class)->except('show');
+
+        Route::resource('banners', BannerController::class)->except('show');
     });
 
     Route::middleware('can:manage-store')->group(function (): void {

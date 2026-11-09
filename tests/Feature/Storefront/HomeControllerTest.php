@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\Banner;
+use App\Models\Category;
 use App\Services\Settings;
 
 it('renders the English home page left to right', function () {
@@ -58,4 +60,43 @@ it('shows the WhatsApp link in the footer once the number is saved', function ()
         ->assertOk()
         ->assertSee('href="https://wa.me/97455551234"', false)
         ->assertSee('+974 5555 1234');
+});
+
+it('shows live banners and skips switched off ones', function () {
+    Banner::factory()->create(['title_en' => 'Eid is here']);
+    Banner::factory()->hidden()->create(['title_en' => 'Old offer']);
+    Banner::factory()->scheduled()->create(['title_en' => 'Next week offer']);
+
+    $this->get(route('home', ['locale' => 'en']))
+        ->assertOk()
+        ->assertSee('Eid is here')
+        ->assertDontSee('Old offer')
+        ->assertDontSee('Next week offer');
+});
+
+it('shows new arrivals and the colors shoppers can choose', function () {
+    listedProduct(['name_en' => 'Fresh kaftan'], ['navy' => ['56' => 1], 'olive' => ['56' => 1]]);
+    listedProduct(['name_en' => 'Hidden draft', 'status' => 'draft'], ['rose' => ['56' => 1]]);
+
+    $this->get(route('home', ['locale' => 'en']))
+        ->assertOk()
+        ->assertSee('Fresh kaftan')
+        ->assertDontSee('Hidden draft')
+        ->assertViewHas('colors', fn ($colors) => $colors->pluck('slug')->sort()->values()->all() === ['navy', 'olive']);
+});
+
+it('lists categories in the menu and refreshes the menu when one is added', function () {
+    Category::factory()->create(['name_en' => 'Women']);
+    $this->get(route('home', ['locale' => 'en']))->assertSee('Women');
+
+    Category::factory()->create(['name_en' => 'Kids']);
+
+    $this->get(route('home', ['locale' => 'en']))->assertSee('Kids');
+});
+
+it('renders the phone menu and search overlay outside the header', function () {
+    // The header uses backdrop-blur, which would trap these full-screen overlays inside its height.
+    $this->get(route('home', ['locale' => 'en']))
+        ->assertOk()
+        ->assertSeeInOrder(['</header>', 'id="mobile-menu"', 'searchBox('], false);
 });

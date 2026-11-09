@@ -325,7 +325,7 @@ Size  (global, ordered: S…XXL, 52…62, Free Size)
 - CSV exports use Laravel's streamed responses.
 - Charts are plain inline SVG or CSS bars, so no chart library is needed.
 
-**Roles:** **Owner** (everything) and **Staff** (orders, customers, stock; no settings, reports or users). Admin login is rate-limited, sessions time out, and all admin routes sit behind auth and role middleware.
+**Roles:** **Owner** (everything) and **Staff** (products and catalog, stock, orders, customers; no settings, reports or users — confirmed 2026-11-09). Admin login is rate-limited, sessions time out, and all admin routes sit behind auth and role middleware.
 
 | Area | What the client can do |
 |---|---|

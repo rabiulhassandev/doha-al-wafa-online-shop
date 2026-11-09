@@ -25,16 +25,21 @@
             <link rel="alternate" hreflang="{{ $alternateLocale }}" href="{{ $localizedUrl->current($alternateLocale) }}">
         @endforeach
 
+        @stack('head')
+
         @fonts
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="flex min-h-dvh flex-col">
-        <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:start-4 focus:top-4 focus:z-[60] focus:rounded-full focus:bg-ink-900 focus:px-4 focus:py-2 focus:text-sm focus:text-white">
+        <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:start-4 focus:top-4 focus:z-60 focus:rounded-full focus:bg-ink-900 focus:px-4 focus:py-2 focus:text-sm focus:text-white">
             {{ __('Skip to content') }}
         </a>
 
         <x-store.announcement-bar />
         <x-store.header />
+        {{-- Kept outside the header so these full-screen overlays cover the whole viewport. --}}
+        <x-store.mobile-menu />
+        <x-store.search-overlay />
 
         <main id="main" class="flex-1">
             {{ $slot }}

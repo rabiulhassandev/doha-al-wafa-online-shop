@@ -21,6 +21,17 @@
             </p>
         </div>
 
+        <div>
+            <h2 class="text-sm font-semibold">{{ __('Shop') }}</h2>
+            <ul class="mt-4 space-y-2.5 text-sm text-ink-700">
+                <li><a href="{{ route('shop') }}" class="hover:text-maroon-700">{{ __('Shop all') }}</a></li>
+                @foreach ($navigation['categories'] as $category)
+                    <li><a href="{{ route('category.show', $category) }}" class="hover:text-maroon-700">{{ $category->translated('name') }}</a></li>
+                @endforeach
+                <li><a href="{{ route('wishlist') }}" class="hover:text-maroon-700">{{ __('Wishlist') }}</a></li>
+            </ul>
+        </div>
+
         @if ($whatsApp || $phone || filled($email))
             <div>
                 <h2 class="text-sm font-semibold">{{ __('Contact us') }}</h2>

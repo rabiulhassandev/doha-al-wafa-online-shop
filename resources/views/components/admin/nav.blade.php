@@ -39,6 +39,14 @@
             </x-admin.nav-link>
         @endcan
 
+        @can('manage-catalog')
+            <p class="px-3 pt-6 pb-2 text-xs font-medium tracking-wider text-sand-300/60 uppercase">Marketing</p>
+
+            <x-admin.nav-link :href="route('admin.banners.index')" icon="image" :active="request()->routeIs('admin.banners.*')">
+                Home banners
+            </x-admin.nav-link>
+        @endcan
+
         @can('manage-store')
             <p class="px-3 pt-6 pb-2 text-xs font-medium tracking-wider text-sand-300/60 uppercase">Store</p>
 

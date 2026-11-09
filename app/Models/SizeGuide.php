@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Translatable;
 use Database\Factories\SizeGuideFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,7 +18,7 @@ use Illuminate\Database\Eloquent\Model;
 class SizeGuide extends Model
 {
     /** @use HasFactory<SizeGuideFactory> */
-    use HasFactory;
+    use HasFactory, Translatable;
 
     /**
      * Get the attributes that should be cast.

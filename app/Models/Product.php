@@ -3,8 +3,13 @@
 namespace App\Models;
 
 use App\Enums\ProductStatus;
+use App\Models\Concerns\Translatable;
+use App\Support\SearchText;
 use Database\Factories\ProductFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -34,7 +39,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Product extends Model
 {
     /** @use HasFactory<ProductFactory> */
-    use HasFactory;
+    use HasFactory, Translatable;
 
     /**
      * The model's default values for attributes.
@@ -71,6 +76,8 @@ class Product extends Model
             if ($product->status === ProductStatus::Active && $product->published_at === null) {
                 $product->published_at = now();
             }
+
+            $product->search_text = SearchText::normalize("{$product->name_en} {$product->name_ar} {$product->code}");
         });
 
         // Delete colors one by one so their photos are removed from storage too.
@@ -127,6 +134,72 @@ class Product extends Model
     public function variants(): HasMany
     {
         return $this->hasMany(ProductVariant::class);
+    }
+
+    /**
+     * Scope the query to products shoppers can see: active, with at least one listed color.
+     *
+     * @param  Builder<self>  $query
+     */
+    #[Scope]
+    protected function listed(Builder $query): void
+    {
+        $query->where('status', ProductStatus::Active)
+            ->whereHas('colors', fn (Builder $query) => $query->listed());
+    }
+
+    /**
+     * Determine whether shoppers can see the product. Expects colors with images and variants loaded.
+     */
+    public function isListed(): bool
+    {
+        return $this->status === ProductStatus::Active && $this->listedColors()->isNotEmpty();
+    }
+
+    /**
+     * Get the colors shoppers can choose. Expects colors with images and variants loaded.
+     *
+     * @return EloquentCollection<int, ProductColor>
+     */
+    public function listedColors(): EloquentCollection
+    {
+        return $this->colors->filter(fn (ProductColor $productColor): bool => $productColor->isListed())->values();
+    }
+
+    /**
+     * Pick the color to show first: one the shopper filtered by, then the default color, then the first.
+     *
+     * @param  list<int>  $preferredColorIds  palette color IDs
+     */
+    public function displayColor(array $preferredColorIds = []): ?ProductColor
+    {
+        $listedColors = $this->listedColors();
+
+        return $listedColors->first(fn (ProductColor $productColor): bool => in_array($productColor->color_id, $preferredColorIds, true))
+            ?? $listedColors->firstWhere('is_default', true)
+            ?? $listedColors->first();
+    }
+
+    /**
+     * Get the lowest and highest price shoppers pay across the offered sizes, in dirhams.
+     *
+     * @return array{int, int}
+     */
+    public function priceRange(): array
+    {
+        $prices = $this->listedColors()
+            ->flatMap(fn (ProductColor $productColor) => $productColor->offeredVariants())
+            ->map(fn (ProductVariant $variant): int => $variant->price ?? $this->price);
+
+        return $prices->isEmpty() ? [$this->price, $this->price] : [$prices->min(), $prices->max()];
+    }
+
+    /**
+     * Determine whether any offered color and size is in stock.
+     */
+    public function isInStock(): bool
+    {
+        return $this->listedColors()->contains(fn (ProductColor $productColor): bool => $productColor->isInStock());
     }
 
     /**
