@@ -14,6 +14,16 @@ test('only team members may access the admin panel', function (UserRole $role, b
     'customer' => [UserRole::Customer, false],
 ]);
 
+test('only team members may manage the catalog', function (UserRole $role, bool $allowed) {
+    $user = User::factory()->make(['role' => $role]);
+
+    expect(Gate::forUser($user)->allows('manage-catalog'))->toBe($allowed);
+})->with([
+    'owner' => [UserRole::Owner, true],
+    'staff' => [UserRole::Staff, true],
+    'customer' => [UserRole::Customer, false],
+]);
+
 test('only owners may manage the store', function (UserRole $role, bool $allowed) {
     $user = User::factory()->make(['role' => $role]);
 

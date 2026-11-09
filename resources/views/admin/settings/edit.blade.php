@@ -27,7 +27,9 @@
                     hint="Mobile or landline."
                     inputmode="tel"
                 />
-                <x-admin.input name="contact_email" type="email" label="Contact email" :value="$settings['contact_email']" class="sm:col-span-2" />
+                <div class="sm:col-span-2">
+                    <x-admin.input name="contact_email" type="email" label="Contact email" :value="$settings['contact_email']" />
+                </div>
             </div>
         </x-admin.card>
 

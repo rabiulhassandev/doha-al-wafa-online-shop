@@ -10,6 +10,26 @@
             Dashboard
         </x-admin.nav-link>
 
+        @can('manage-catalog')
+            <p class="px-3 pt-6 pb-2 text-xs font-medium tracking-wider text-sand-300/60 uppercase">Catalog</p>
+
+            <x-admin.nav-link :href="route('admin.categories.index')" icon="tag" :active="request()->routeIs('admin.categories.*')">
+                Categories
+            </x-admin.nav-link>
+            <x-admin.nav-link :href="route('admin.collections.index')" icon="layers" :active="request()->routeIs('admin.collections.*')">
+                Collections
+            </x-admin.nav-link>
+            <x-admin.nav-link :href="route('admin.colors.index')" icon="palette" :active="request()->routeIs('admin.colors.*')">
+                Colors
+            </x-admin.nav-link>
+            <x-admin.nav-link :href="route('admin.sizes.index')" icon="ruler" :active="request()->routeIs('admin.sizes.*')">
+                Sizes
+            </x-admin.nav-link>
+            <x-admin.nav-link :href="route('admin.size-guides.index')" icon="table" :active="request()->routeIs('admin.size-guides.*')">
+                Size guides
+            </x-admin.nav-link>
+        @endcan
+
         @can('manage-store')
             <p class="px-3 pt-6 pb-2 text-xs font-medium tracking-wider text-sand-300/60 uppercase">Store</p>
 

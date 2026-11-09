@@ -24,6 +24,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Media Disk
+    |--------------------------------------------------------------------------
+    |
+    | The filesystem disk for uploaded catalog images. "public" serves files
+    | from storage/app/public (run "php artisan storage:link" once). Point it
+    | at an S3-compatible disk in production to serve images from a CDN.
+    |
+    */
+
+    'media_disk' => env('MEDIA_DISK', 'public'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Store Setting Defaults
     |--------------------------------------------------------------------------
     |

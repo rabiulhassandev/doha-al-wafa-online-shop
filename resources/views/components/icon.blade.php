@@ -113,5 +113,36 @@
         @case('trash')
             <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" />
             @break
+        @case('image')
+            <rect x="3.5" y="4.5" width="17" height="15" rx="2" />
+            <circle cx="9" cy="10" r="1.75" />
+            <path d="m4 17.5 4.5-4.5 3.5 3.5 2.5-2.5 5.5 5" />
+            @break
+        @case('alert')
+            <circle cx="12" cy="12" r="8.5" />
+            <path d="M12 7.5v5.5M12 16.5v.01" />
+            @break
+        @case('tag')
+            <path d="M3.5 12.2V4.5a1 1 0 0 1 1-1h7.7l8.3 8.3a1.5 1.5 0 0 1 0 2.1l-6.4 6.4a1.5 1.5 0 0 1-2.1 0z" />
+            <circle cx="8" cy="8" r="1.5" />
+            @break
+        @case('layers')
+            <path d="m12 3.5 8.5 4.5-8.5 4.5L3.5 8z" />
+            <path d="m3.5 12 8.5 4.5 8.5-4.5M3.5 16l8.5 4.5 8.5-4.5" />
+            @break
+        @case('palette')
+            <path d="M12 3.5a8.5 8.5 0 0 0 0 17c1.1 0 1.8-.8 1.8-1.7 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.8-1.7 1.7-1.7h2a4 4 0 0 0 4-4c0-4.1-3.8-7.2-8.5-7.2z" />
+            <circle cx="7.5" cy="11.5" r="1" fill="currentColor" stroke="none" />
+            <circle cx="10" cy="7.5" r="1" fill="currentColor" stroke="none" />
+            <circle cx="14.5" cy="7.5" r="1" fill="currentColor" stroke="none" />
+            @break
+        @case('ruler')
+            <path d="M4 15.5 15.5 4l4.5 4.5L8.5 20z" />
+            <path d="m8 11.5 2 2M10.5 9l1.5 1.5M13 6.5l2 2" />
+            @break
+        @case('table')
+            <rect x="3.5" y="4.5" width="17" height="15" rx="2" />
+            <path d="M3.5 9.5h17M3.5 14.5h17M9.5 9.5v10" />
+            @break
     @endswitch
 </svg>

@@ -12,7 +12,7 @@
         <title>{{ $title }} · Admin · {{ $settings->get('store_name') }}</title>
 
         @fonts
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @vite(['resources/css/app.css', 'resources/js/admin.js'])
     </head>
     <body
         class="min-h-dvh bg-sand-100"
