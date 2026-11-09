@@ -11,15 +11,20 @@ class DatabaseSeeder extends Seeder
     use WithoutModelEvents;
 
     /**
-     * Seed the application's database.
+     * Seed the application's database for local development.
+     *
+     * Production owners are created with "php artisan shop:create-owner".
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        User::factory()->owner()->create([
+            'name' => 'Store Owner',
+            'email' => 'owner@example.com',
+        ]);
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        User::factory()->staff()->create([
+            'name' => 'Staff Member',
+            'email' => 'staff@example.com',
         ]);
     }
 }

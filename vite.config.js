@@ -9,8 +9,26 @@ export default defineConfig({
             input: ['resources/css/app.css', 'resources/js/app.js'],
             refresh: true,
             fonts: [
-                bunny('Instrument Sans', {
+                // Body text in both languages. Preloading is off because browsers fetch
+                // only the subsets and weights a page actually renders.
+                bunny('IBM Plex Sans Arabic', {
+                    alias: 'body',
                     weights: [400, 500, 600],
+                    subsets: ['latin', 'arabic'],
+                    preload: false,
+                }),
+                // Latin headings and the wordmark.
+                bunny('Fraunces', {
+                    alias: 'display-latin',
+                    weights: [600],
+                    preload: false,
+                }),
+                // Arabic headings.
+                bunny('Noto Kufi Arabic', {
+                    alias: 'display-arabic',
+                    weights: [600],
+                    subsets: ['arabic'],
+                    preload: false,
                 }),
             ],
         }),

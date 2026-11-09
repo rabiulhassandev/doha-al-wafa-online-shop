@@ -3,7 +3,83 @@
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
+/*
+ * Design tokens. Font variables (--font-body, --font-display-latin,
+ * --font-display-arabic) come from the @fonts directive.
+ */
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+    --font-display: var(--font-display-latin), Georgia, serif;
+    --font-brand: var(--font-display-latin), Georgia, serif;
+
+    --color-sand-50: #fbf8f3;
+    --color-sand-100: #f5efe6;
+    --color-sand-200: #eadfcf;
+    --color-sand-300: #d9c8af;
+
+    --color-ink-300: #a39a91;
+    --color-ink-500: #6b625a;
+    --color-ink-700: #3d3631;
+    --color-ink-900: #1e1a17;
+
+    --color-maroon-50: #f8edf0;
+    --color-maroon-100: #f0d5dc;
+    --color-maroon-600: #8e2741;
+    --color-maroon-700: #7a1e35;
+    --color-maroon-800: #63172a;
+    --color-maroon-900: #4a1120;
+
+    --color-gold-300: #dcc39b;
+    --color-gold-500: #b8925a;
+    --color-gold-700: #7d5f33;
+
+    --color-success-50: #ecf5f0;
+    --color-success-700: #2f6b4f;
+    --color-danger-50: #fdeceb;
+    --color-danger-700: #b42318;
+}
+
+/* Arabic headings use the Kufi face. Applies to Arabic pages and any lang="ar" element. */
+:lang(ar) {
+    --font-display: var(--font-display-arabic), var(--font-body), sans-serif;
+}
+
+@layer base {
+    html {
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+        @apply bg-sand-50 font-sans text-ink-900 antialiased;
+    }
+
+    [x-cloak] {
+        display: none !important;
+    }
+}
+
+@utility page-container {
+    width: 100%;
+    max-width: 80rem;
+    margin-inline: auto;
+    padding-inline: 1rem;
+
+    @media (width >= 40rem) {
+        padding-inline: 1.5rem;
+    }
+
+    @media (width >= 64rem) {
+        padding-inline: 2rem;
+    }
+}
+
+/* Original geometric motif: an eight-point star made of two squares. */
+@utility bg-motif {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Cg fill='none' stroke='%23b8925a' stroke-opacity='.35'%3E%3Crect x='18' y='18' width='20' height='20'/%3E%3Crect x='18' y='18' width='20' height='20' transform='rotate(45 28 28)'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: 56px 56px;
+}
+
+@utility bg-motif-light {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='.12'%3E%3Crect x='18' y='18' width='20' height='20'/%3E%3Crect x='18' y='18' width='20' height='20' transform='rotate(45 28 28)'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: 56px 56px;
 }
