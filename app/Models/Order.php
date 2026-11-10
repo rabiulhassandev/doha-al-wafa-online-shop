@@ -162,21 +162,29 @@ class Order extends Model
      */
     public function sourceLabel(): ?string
     {
-        if (filled($this->utm_source)) {
-            return collect([$this->utm_source, $this->utm_medium])->filter()->implode(' / ');
+        return self::describeSource($this->utm_source, $this->utm_medium, $this->click_id_type, $this->referrer);
+    }
+
+    /**
+     * Describe a source from campaign tags, then an ad click, then the referring site. Reports group orders by it.
+     */
+    public static function describeSource(?string $utmSource, ?string $utmMedium, ?string $clickIdType, ?string $referrer): ?string
+    {
+        if (filled($utmSource)) {
+            return collect([$utmSource, $utmMedium])->filter()->implode(' / ');
         }
 
-        if ($this->click_id_type !== null) {
-            return match ($this->click_id_type) {
+        if ($clickIdType !== null) {
+            return match ($clickIdType) {
                 'meta' => 'Meta ad',
                 'tiktok' => 'TikTok ad',
                 'snapchat' => 'Snapchat ad',
                 'google' => 'Google ad',
-                default => $this->click_id_type,
+                default => $clickIdType,
             };
         }
 
-        return $this->referrer ? (parse_url($this->referrer, PHP_URL_HOST) ?: $this->referrer) : null;
+        return $referrer ? (parse_url($referrer, PHP_URL_HOST) ?: $referrer) : null;
     }
 
     /**

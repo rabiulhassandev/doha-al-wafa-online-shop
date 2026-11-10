@@ -28,6 +28,8 @@ use App\Http\Controllers\Admin\ProductImageController;
 use App\Http\Controllers\Admin\ProductImagePositionController;
 use App\Http\Controllers\Admin\ProductStockController;
 use App\Http\Controllers\Admin\ProductVariantController;
+use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\ReportExportController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\ShortLinkController;
 use App\Http\Controllers\Admin\SizeController;
@@ -124,6 +126,11 @@ Route::middleware(['auth', 'can:access-admin'])->group(function (): void {
     });
 
     Route::middleware('can:manage-store')->group(function (): void {
+        Route::get('reports', ReportController::class)->name('reports.index');
+        Route::get('reports/{report}.csv', ReportExportController::class)
+            ->whereIn('report', ReportExportController::REPORTS)
+            ->name('reports.export');
+
         Route::get('settings', [SettingsController::class, 'edit'])->name('settings.edit');
         Route::put('settings', [SettingsController::class, 'update'])->name('settings.update');
 

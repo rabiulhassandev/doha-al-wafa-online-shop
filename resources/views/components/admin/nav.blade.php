@@ -9,6 +9,11 @@
         <x-admin.nav-link :href="route('admin.dashboard')" icon="grid" :active="request()->routeIs('admin.dashboard')">
             Dashboard
         </x-admin.nav-link>
+        @can('manage-store')
+            <x-admin.nav-link :href="route('admin.reports.index')" icon="chart" :active="request()->routeIs('admin.reports.*')">
+                Reports
+            </x-admin.nav-link>
+        @endcan
 
         @can('manage-orders')
             <p class="px-3 pt-6 pb-2 text-xs font-medium tracking-wider text-sand-300/60 uppercase">Sales</p>
