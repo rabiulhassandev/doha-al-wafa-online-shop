@@ -21,6 +21,13 @@
     ];
 @endphp
 
+@if ($searchTerm !== null)
+    {{-- Search results change with every query, so search engines skip them. --}}
+    @push('head')
+        <meta name="robots" content="noindex, follow">
+    @endpush
+@endif
+
 <x-store.layout :title="$heading" :description="$description">
     @if ($bannerUrl ?? null)
         <img src="{{ $bannerUrl }}" alt="" class="aspect-[16/7] max-h-96 w-full object-cover" fetchpriority="high">

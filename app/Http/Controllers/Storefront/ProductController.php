@@ -15,6 +15,7 @@ use App\Services\Settings;
 use App\Services\Tracking;
 use App\Support\DeliveryEstimate;
 use App\Support\Money;
+use App\Support\StructuredData;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
@@ -69,6 +70,7 @@ class ProductController extends Controller
             'trackingEvent' => $tracking->isEnabled()
                 ? $tracking->viewContent((string) $product->translated('name'), $selectedColor->offeredVariants(), $priceRange[0])
                 : null,
+            'structuredData' => StructuredData::product($product, $colors, (string) $this->settings->get('store_name')),
         ]);
     }
 

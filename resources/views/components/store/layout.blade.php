@@ -1,6 +1,8 @@
 @props([
     'title' => null,
     'description' => null,
+    // The address search engines should index; by default the page without its filters or campaign tags.
+    'canonical' => null,
     // Link previews in WhatsApp, Instagram, Facebook, Snapchat and TikTok.
     'ogType' => 'website',
     'ogTitle' => null,
@@ -36,9 +38,11 @@
             <meta name="description" content="{{ $description }}">
         @endif
 
+        <link rel="canonical" href="{{ $canonical ?? url()->current() }}">
         @foreach (array_keys(config('shop.locales')) as $alternateLocale)
             <link rel="alternate" hreflang="{{ $alternateLocale }}" href="{{ $localizedUrl->current($alternateLocale) }}">
         @endforeach
+        <link rel="alternate" hreflang="x-default" href="{{ $localizedUrl->current(config('shop.default_locale')) }}">
 
         <meta property="og:site_name" content="{{ $storeName }}">
         <meta property="og:type" content="{{ $ogType }}">
@@ -77,6 +81,9 @@
         </a>
 
         <x-store.announcement-bar />
+        @if (session('page_expired'))
+            <p class="bg-gold-300/40 px-4 py-2 text-center text-sm font-medium text-ink-900" role="alert">{{ __('This page was open for a while, so we refreshed it. Please check your details and send them again.') }}</p>
+        @endif
         @if (session('coupon_notice'))
             <p class="bg-success-50 px-4 py-2 text-center text-sm font-medium text-success-700" role="status">{{ session('coupon_notice') }}</p>
         @endif

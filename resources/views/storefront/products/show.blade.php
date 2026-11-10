@@ -38,7 +38,6 @@
 @endphp
 
 @push('head')
-    <link rel="canonical" href="{{ route('products.show', $product) }}">
     {{-- Shared links preview the color that was open, with its own photo. --}}
     <meta property="product:price:amount" content="{{ Money::toInput($lowestPrice) }}">
     <meta property="product:price:currency" content="QAR">
@@ -46,9 +45,11 @@
     @if ($isPreview)
         <meta name="robots" content="noindex">
     @endif
+    <x-store.json-ld :data="$structuredData" />
 @endpush
 
 <x-store.layout
+    :canonical="route('products.show', $product)"
     :title="$product->translated('meta_title') ?: $name"
     :description="$product->translated('meta_description') ?: \Illuminate\Support\Str::limit((string) $product->translated('description'), 155)"
     og-type="product"

@@ -27,6 +27,7 @@ use App\Http\Controllers\Storefront\ProductController;
 use App\Http\Controllers\Storefront\ProductFeedController;
 use App\Http\Controllers\Storefront\SearchController;
 use App\Http\Controllers\Storefront\SearchSuggestionController;
+use App\Http\Controllers\Storefront\SeoController;
 use App\Http\Controllers\Storefront\ShopController;
 use App\Http\Controllers\Storefront\ShortLinkController;
 use App\Http\Controllers\Storefront\SubscriberController;
@@ -46,6 +47,8 @@ Route::get('p/{code}', ShortLinkController::class)
 Route::get('feeds/{platform}.csv', ProductFeedController::class)
     ->middleware('throttle:30,1')
     ->name('feeds.show');
+Route::get('robots.txt', [SeoController::class, 'robots'])->name('robots');
+Route::get('sitemap.xml', [SeoController::class, 'sitemap'])->middleware('throttle:30,1')->name('sitemap');
 
 Route::prefix('{locale}')
     ->where(['locale' => implode('|', array_keys(config('shop.locales')))])

@@ -21,6 +21,12 @@
                 <h1 class="mt-2 text-sm text-ink-500">{{ $title }} to the admin panel</h1>
             </div>
 
+            @if (session('status') || session('error'))
+                <div class="mt-8">
+                    <x-admin.flash />
+                </div>
+            @endif
+
             <div class="mt-8 rounded-2xl border border-sand-200 bg-white p-6 shadow-sm sm:p-8">
                 {{ $slot }}
             </div>

@@ -1,3 +1,10 @@
+@inject('settings', 'App\Services\Settings')
+
+@push('head')
+    <x-store.json-ld :data="\App\Support\StructuredData::store($settings)" />
+    <x-store.json-ld :data="\App\Support\StructuredData::website((string) $settings->get('store_name'))" />
+@endpush
+
 <x-store.layout :description="__('Jelabiyas in many colors, delivered across Qatar. Pay cash on delivery.')">
     @if ($banners->isNotEmpty())
         <h1 class="sr-only">{{ __('Jelabiyas in the colors you love') }}</h1>

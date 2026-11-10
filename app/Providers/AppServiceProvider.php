@@ -18,6 +18,7 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
@@ -42,6 +43,10 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Model::preventLazyLoading(! $this->app->isProduction());
+
+        // The live store is HTTPS only, so links in pages, emails, feeds and the sitemap always use https,
+        // even behind a proxy or CDN that talks to the app over plain HTTP.
+        URL::forceHttps($this->app->isProduction());
 
         Password::defaults(fn (): Password => Password::min(10)->letters()->numbers());
 

@@ -16,3 +16,7 @@
         @endforeach
     </ol>
 </nav>
+
+@if (count($items) > 1)
+    <x-store.json-ld :data="\App\Support\StructuredData::breadcrumbs($items)" />
+@endif
