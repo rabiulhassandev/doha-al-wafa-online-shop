@@ -66,6 +66,18 @@ return [
         'max_quantity_per_item' => 10,
         // New order emails go here; null sends none.
         'order_alert_email' => null,
+        // Short exchange promise for the trust badges, e.g. "Exchange within 7 days".
+        'exchange_promise_en' => null,
+        'exchange_promise_ar' => null,
+        // Ask visitors before ad trackers (added later) may load.
+        'consent_bar_enabled' => false,
+        // Team WhatsApp messages; null uses the built-in wording.
+        'whatsapp_message_confirm_en' => null,
+        'whatsapp_message_confirm_ar' => null,
+        'whatsapp_message_on_the_way_en' => null,
+        'whatsapp_message_on_the_way_ar' => null,
+        'whatsapp_message_missed_delivery_en' => null,
+        'whatsapp_message_missed_delivery_ar' => null,
     ],
 
     /*

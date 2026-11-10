@@ -108,6 +108,41 @@
             </div>
         </x-admin.card>
 
+        <x-admin.card title="Trust badges" description="A short exchange promise, shown with cash on delivery and delivery across Qatar. Leave empty to leave it out.">
+            <div class="grid gap-5 sm:grid-cols-2">
+                <x-admin.input name="exchange_promise_en" label="English exchange promise" :value="$settings['exchange_promise_en']" maxlength="80" placeholder="Exchange within 7 days" />
+                <x-admin.input name="exchange_promise_ar" label="Arabic exchange promise" :value="$settings['exchange_promise_ar']" maxlength="80" dir="rtl" lang="ar" placeholder="استبدال خلال 7 أيام" />
+            </div>
+        </x-admin.card>
+
+        <x-admin.card title="WhatsApp messages" description="Ready-written messages on each order page, in the customer's language. Leave a box empty to use the wording shown in it. :name, :number, :total and :store are filled in for each order.">
+            <div class="grid gap-5 lg:grid-cols-2">
+                @foreach (\App\Services\WhatsAppMessages::DEFAULTS as $key => $message)
+                    @foreach (['en' => 'English', 'ar' => 'Arabic'] as $locale => $language)
+                        <x-admin.textarea
+                            :name="'whatsapp_message_'.$key.'_'.$locale"
+                            :label="$message['label'].' ('.$language.')'"
+                            :value="$settings['whatsapp_message_'.$key.'_'.$locale]"
+                            :placeholder="\App\Services\WhatsAppMessages::defaultText($key, $locale)"
+                            rows="3"
+                            maxlength="500"
+                            :dir="$locale === 'ar' ? 'rtl' : 'ltr'"
+                            :lang="$locale"
+                        />
+                    @endforeach
+                @endforeach
+            </div>
+        </x-admin.card>
+
+        <x-admin.card title="Privacy">
+            <x-admin.toggle
+                name="consent_bar_enabled"
+                label="Ask visitors before ad tracking"
+                :checked="(bool) $settings['consent_bar_enabled']"
+                hint="Shows a small bar where visitors accept or refuse ad cookies. Turn it on before adding Meta, TikTok or Snapchat tracking: those load only for visitors who accept."
+            />
+        </x-admin.card>
+
         <x-admin.card title="Inventory">
             <div class="max-w-xs">
                 <x-admin.input

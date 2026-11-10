@@ -6,6 +6,7 @@ use App\Enums\CartLineStatus;
 use App\Enums\ProductStatus;
 use App\Models\Cart;
 use App\Models\CartItem;
+use App\Models\Coupon;
 use App\Models\DeliveryZone;
 use App\Models\ProductVariant;
 use App\Support\CartLine;
@@ -22,6 +23,8 @@ class CartService
     public const COOKIE = 'cart';
 
     public const DELIVERY_ZONE_SESSION_KEY = 'delivery_zone_id';
+
+    public const COUPON_SESSION_KEY = 'checkout.coupon';
 
     private const COOKIE_MINUTES = Cart::KEEP_DAYS * 24 * 60;
 
@@ -124,7 +127,7 @@ class CartService
     /**
      * Price the bag. Lines with more pieces than are left are lowered to what is in stock.
      */
-    public function summary(?Cart $cart, ?DeliveryZone $deliveryZone): CartSummary
+    public function summary(?Cart $cart, ?DeliveryZone $deliveryZone, ?Coupon $coupon = null): CartSummary
     {
         $items = $cart?->items()->with(self::LINE_RELATIONS)->orderBy('id')->get() ?? collect();
 
@@ -132,17 +135,26 @@ class CartService
             $items->map(fn (CartItem $item): CartLine => $this->line($item->productVariant, $item->quantity, $item))->values(),
             $deliveryZone,
             $this->storeFreeDeliveryThreshold(),
+            $coupon,
         );
     }
 
     /**
      * Price a single "Order now" item without touching the bag.
      */
-    public function summaryFor(ProductVariant $variant, int $quantity, ?DeliveryZone $deliveryZone): CartSummary
+    public function summaryFor(ProductVariant $variant, int $quantity, ?DeliveryZone $deliveryZone, ?Coupon $coupon = null): CartSummary
     {
         $variant->loadMissing(['product', 'size', 'productColor.color', 'productColor.images']);
 
-        return new CartSummary(collect([$this->line($variant, $quantity)]), $deliveryZone, $this->storeFreeDeliveryThreshold());
+        return new CartSummary(collect([$this->line($variant, $quantity)]), $deliveryZone, $this->storeFreeDeliveryThreshold(), $coupon);
+    }
+
+    /**
+     * Get the discount code the shopper applied during this visit, typed in the bag or opened from a link.
+     */
+    public function coupon(Request $request): ?Coupon
+    {
+        return Coupon::findByCode($request->session()->get(self::COUPON_SESSION_KEY));
     }
 
     /**

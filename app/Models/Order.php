@@ -23,7 +23,7 @@ use Illuminate\Support\Facades\URL;
  */
 #[Fillable([
     'checkout_token', 'channel', 'status', 'payment_method', 'payment_status', 'currency',
-    'subtotal', 'discount_total', 'delivery_fee', 'tax_total', 'grand_total',
+    'subtotal', 'discount_total', 'coupon_id', 'coupon_code', 'delivery_fee', 'tax_total', 'grand_total',
     'customer_name', 'customer_phone', 'customer_email',
     'delivery_zone_id', 'delivery_zone_name_en', 'delivery_zone_name_ar',
     'zone_number', 'street_number', 'building_number', 'unit', 'landmark', 'latitude', 'longitude',
@@ -131,6 +131,16 @@ class Order extends Model
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
+    }
+
+    /**
+     * Get the coupon used, while it still exists. Its code is also copied onto the order.
+     *
+     * @return BelongsTo<Coupon, $this>
+     */
+    public function coupon(): BelongsTo
+    {
+        return $this->belongsTo(Coupon::class);
     }
 
     /**

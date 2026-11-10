@@ -24,6 +24,8 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Set in the browser by the cookie bar, so it is not encrypted.
+        $middleware->encryptCookies(except: ['tracking_consent']);
         $middleware->redirectGuestsTo(fn (): string => route('admin.login'));
         $middleware->redirectUsersTo(fn (): string => route('admin.dashboard'));
     })

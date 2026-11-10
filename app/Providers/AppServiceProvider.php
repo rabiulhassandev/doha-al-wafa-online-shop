@@ -53,7 +53,7 @@ class AppServiceProvider extends ServiceProvider
         Route::bind('staff', fn (string $value): User => User::query()->staff()->findOrFail($value));
 
         View::composer(
-            ['components.store.header', 'components.store.mobile-menu', 'components.store.footer'],
+            ['components.store.header', 'components.store.mobile-menu', 'components.store.footer', 'components.store.consent-bar'],
             StoreNavigationComposer::class,
         );
         View::composer(['components.store.header', 'components.store.cart-drawer'], CartCountComposer::class);

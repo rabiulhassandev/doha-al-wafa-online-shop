@@ -101,7 +101,7 @@ class CartItemController extends Controller
             return to_route('cart.show')->with('status', $message);
         }
 
-        $summary = $cartService->summary($cart, $cartService->deliveryZone($request));
+        $summary = $cartService->summary($cart, $cartService->deliveryZone($request), $cartService->coupon($request));
 
         return response()->json([
             'message' => $message,

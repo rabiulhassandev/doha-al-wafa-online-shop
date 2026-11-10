@@ -45,6 +45,15 @@ class UpdateSettingsRequest extends FormRequest
             'preferred_date_enabled' => ['required', 'boolean'],
             'max_quantity_per_item' => ['required', 'integer', 'min:1', 'max:50'],
             'order_alert_email' => ['nullable', 'string', 'email', 'max:255'],
+            'exchange_promise_en' => ['nullable', 'string', 'max:80'],
+            'exchange_promise_ar' => ['nullable', 'string', 'max:80'],
+            'consent_bar_enabled' => ['required', 'boolean'],
+            'whatsapp_message_confirm_en' => ['nullable', 'string', 'max:500'],
+            'whatsapp_message_confirm_ar' => ['nullable', 'string', 'max:500'],
+            'whatsapp_message_on_the_way_en' => ['nullable', 'string', 'max:500'],
+            'whatsapp_message_on_the_way_ar' => ['nullable', 'string', 'max:500'],
+            'whatsapp_message_missed_delivery_en' => ['nullable', 'string', 'max:500'],
+            'whatsapp_message_missed_delivery_ar' => ['nullable', 'string', 'max:500'],
         ];
     }
 
@@ -69,7 +78,15 @@ class UpdateSettingsRequest extends FormRequest
             'delivery_free_over' => 'free delivery amount',
             'delivery_days_off.*' => 'day without delivery',
             'max_quantity_per_item' => 'most of one size per order',
-            'order_alert_email' => 'new order email',
+            'order_alert_email' => 'store alerts email',
+            'exchange_promise_en' => 'English exchange promise',
+            'exchange_promise_ar' => 'Arabic exchange promise',
+            'whatsapp_message_confirm_en' => 'English confirmation message',
+            'whatsapp_message_confirm_ar' => 'Arabic confirmation message',
+            'whatsapp_message_on_the_way_en' => 'English on-the-way message',
+            'whatsapp_message_on_the_way_ar' => 'Arabic on-the-way message',
+            'whatsapp_message_missed_delivery_en' => 'English missed delivery message',
+            'whatsapp_message_missed_delivery_ar' => 'Arabic missed delivery message',
         ];
     }
 
@@ -92,6 +109,7 @@ class UpdateSettingsRequest extends FormRequest
         $values['delivery_free_over'] = $freeOver === null ? null : Money::toDirhams($freeOver);
         $values['delivery_days_off'] = array_map('intval', $this->validated('delivery_days_off', []));
         $values['preferred_date_enabled'] = $this->boolean('preferred_date_enabled');
+        $values['consent_bar_enabled'] = $this->boolean('consent_bar_enabled');
 
         return $values;
     }

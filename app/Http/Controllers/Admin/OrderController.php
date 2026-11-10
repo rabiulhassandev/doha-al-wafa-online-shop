@@ -12,10 +12,8 @@ use App\Http\Requests\Admin\StoreOrderRequest;
 use App\Models\DeliveryZone;
 use App\Models\Order;
 use App\Models\ProductVariant;
-use App\Services\Settings;
-use App\Support\Money;
+use App\Services\WhatsAppMessages;
 use App\Support\OrderFilters;
-use App\Support\QatarPhone;
 use App\Support\VariantOption;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\View\View;
@@ -24,15 +22,6 @@ use Illuminate\Http\Request;
 
 class OrderController extends Controller
 {
-    /**
-     * Messages the team can send on WhatsApp, written in the customer's language when the order is shown.
-     */
-    private const WHATSAPP_MESSAGES = [
-        'Ask to confirm the order' => 'Hello :name, this is :store. We received your order :number for :total, paid in cash on delivery. Can you confirm it, please?',
-        'Say it is on the way' => 'Hello :name, your order :number from :store is on its way to you today. Please have :total ready in cash.',
-        'Arrange a missed delivery' => 'Hello :name, our driver could not reach you with your order :number from :store. When is a good time to deliver it?',
-    ];
-
     /**
      * List orders, newest first, with a tab per status.
      */
@@ -105,7 +94,7 @@ class OrderController extends Controller
     /**
      * Show an order with everything needed to confirm, pack and deliver it.
      */
-    public function show(Order $order, Settings $settings): View
+    public function show(Order $order, WhatsAppMessages $whatsAppMessages): View
     {
         $order->load([
             'items.productVariant',
@@ -117,7 +106,7 @@ class OrderController extends Controller
         return view('admin.orders.show', [
             'order' => $order,
             'timeline' => $this->timeline($order),
-            'whatsAppMessages' => $this->whatsAppMessages($order, (string) $settings->get('store_name')),
+            'whatsAppMessages' => $whatsAppMessages->forOrder($order),
             'canCollectCash' => $order->payment_status === PaymentStatus::Pending
                 && in_array($order->status, [OrderStatus::OutForDelivery, OrderStatus::Delivered], true),
         ]);
@@ -146,34 +135,5 @@ class OrderController extends Controller
         }
 
         return $events->sortBy(fn (array $event): int => $event['at']->getTimestamp())->values()->all();
-    }
-
-    /**
-     * Get ready-written WhatsApp messages to the customer, in their language.
-     *
-     * @return list<array{label: string, url: string}>
-     */
-    private function whatsAppMessages(Order $order, string $storeName): array
-    {
-        $phone = QatarPhone::tryParse($order->customer_phone);
-
-        if ($phone === null) {
-            return [];
-        }
-
-        $replace = [
-            'name' => $order->customer_name,
-            'number' => $order->number,
-            'store' => $storeName,
-            'total' => Money::format($order->grand_total, $order->locale),
-        ];
-
-        return collect(self::WHATSAPP_MESSAGES)
-            ->map(fn (string $message, string $label): array => [
-                'label' => $label,
-                'url' => 'https://wa.me/'.$phone->whatsAppNumber().'?text='.rawurlencode(__($message, $replace, $order->locale)),
-            ])
-            ->values()
-            ->all();
     }
 }

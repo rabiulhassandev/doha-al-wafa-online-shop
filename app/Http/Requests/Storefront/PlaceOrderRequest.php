@@ -5,6 +5,7 @@ namespace App\Http\Requests\Storefront;
 use App\Enums\PaymentMethod;
 use App\Models\DeliveryZone;
 use App\Rules\QatarPhoneNumber;
+use App\Services\CartService;
 use App\Services\Payments\PaymentGateways;
 use App\Services\Settings;
 use App\Support\CheckoutDetails;
@@ -158,6 +159,7 @@ class PlaceOrderRequest extends FormRequest
             checkoutToken: $this->validated('checkout_token'),
             ipAddress: $this->ip(),
             userAgent: Str::limit((string) $this->userAgent(), 250, ''),
+            couponCode: $this->session()->get(CartService::COUPON_SESSION_KEY),
         );
     }
 

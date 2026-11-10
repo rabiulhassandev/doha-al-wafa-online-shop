@@ -16,6 +16,7 @@
     $moreDetailsOpen = $errors->hasAny($optionalFields)
         || collect($optionalFields)->contains(fn (string $field): bool => filled(old($field)));
     $selectedPaymentMethod = old('payment_method', $paymentMethods[0]->value);
+    $discountText = $summary->discount() > 0 ? '−'.Money::format($summary->discount(), $locale) : $summary->coupon?->benefit();
     $fieldClasses = 'mt-1.5 block w-full rounded-xl border border-sand-300 bg-white px-4 text-base focus:border-maroon-700 focus:ring-2 focus:ring-maroon-100 focus:outline-none';
     $data = [
         'zones' => (object) $zoneOptions,
@@ -23,7 +24,9 @@
         'preferredDate' => (string) old('preferred_delivery_date', ''),
         'latitude' => (string) old('latitude', ''),
         'longitude' => (string) old('longitude', ''),
-        'restoreDraft' => ! $errors->any(),
+        // Restore the browser draft unless this page shows the form's own submitted values.
+        'restoreDraft' => old('checkout_token') === null,
+        'discountText' => $discountText,
         'subtotalText' => Money::format($summary->subtotal(), $locale),
         'messages' => [
             'chooseArea' => __('Choose your area'),
@@ -234,11 +237,21 @@
                         <dt class="text-ink-700">{{ __('Delivery') }}</dt>
                         <dd class="font-medium tabular-nums" x-text="deliveryText">{{ $selectedZone['feeText'] ?? __('Choose your area') }}</dd>
                     </div>
+                    @if ($summary->coupon && $summary->couponProblem === null)
+                        <div class="flex justify-between gap-4 text-success-700">
+                            <dt>{{ __('Discount') }} <span dir="ltr">({{ $summary->coupon->code }})</span></dt>
+                            <dd class="font-medium tabular-nums" x-text="zone?.discountText ?? discountText">{{ $selectedZone['discountText'] ?? $discountText }}</dd>
+                        </div>
+                    @endif
                     <div class="flex justify-between gap-4 border-t border-sand-200 pt-3 text-base">
                         <dt class="font-semibold" x-text="zone ? messages.total : messages.totalBeforeDelivery">{{ $selectedZone ? __('Total') : __('Total before delivery') }}</dt>
                         <dd class="font-semibold tabular-nums" x-text="totalText">{{ $selectedZone['totalText'] ?? Money::format($summary->subtotal(), $locale) }}</dd>
                     </div>
                 </dl>
+
+                <div class="mt-4 border-t border-sand-200 pt-4">
+                    @include('storefront.cart.coupon', ['summary' => $summary, 'external' => true])
+                </div>
 
                 <x-store.button type="submit" size="lg" class="mt-5 w-full" x-bind:disabled="submitting">
                     <span x-show="! submitting">{{ __('Place order') }}</span>
@@ -249,6 +262,15 @@
                     {{ __('You pay in cash when your order arrives.') }}
                 </p>
             </aside>
+        </form>
+
+        {{-- The discount code box sits inside the checkout form, so its buttons submit these forms instead. --}}
+        <form id="coupon-apply-form" method="POST" action="{{ route('cart.coupon.store') }}" class="hidden">
+            @csrf
+        </form>
+        <form id="coupon-remove-form" method="POST" action="{{ route('cart.coupon.destroy') }}" class="hidden">
+            @csrf
+            @method('DELETE')
         </form>
     </div>
 </x-store.layout>

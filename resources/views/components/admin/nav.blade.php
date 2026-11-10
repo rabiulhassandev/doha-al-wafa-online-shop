@@ -22,6 +22,15 @@
             <x-admin.nav-link :href="route('admin.customers.index')" icon="users" :active="request()->routeIs('admin.customers.*')">
                 Customers
             </x-admin.nav-link>
+            <x-admin.nav-link :href="route('admin.messages.index')" icon="mail" :active="request()->routeIs('admin.messages.*')" :count="$messagesUnread">
+                Messages
+                @if ($messagesUnread > 0)
+                    <span class="sr-only">({{ $messagesUnread }} unread)</span>
+                @endif
+            </x-admin.nav-link>
+            <x-admin.nav-link :href="route('admin.subscribers.index')" icon="heart" :active="request()->routeIs('admin.subscribers.*')">
+                Subscribers
+            </x-admin.nav-link>
         @endcan
 
         @can('manage-catalog')
@@ -58,6 +67,22 @@
 
             <x-admin.nav-link :href="route('admin.banners.index')" icon="image" :active="request()->routeIs('admin.banners.*')">
                 Home banners
+            </x-admin.nav-link>
+            @can('manage-store')
+                <x-admin.nav-link :href="route('admin.coupons.index')" icon="tag" :active="request()->routeIs('admin.coupons.*')">
+                    Discount codes
+                </x-admin.nav-link>
+            @endcan
+        @endcan
+
+        @can('manage-store')
+            <p class="px-3 pt-6 pb-2 text-xs font-medium tracking-wider text-sand-300/60 uppercase">Content</p>
+
+            <x-admin.nav-link :href="route('admin.pages.index')" icon="table" :active="request()->routeIs('admin.pages.*')">
+                Pages
+            </x-admin.nav-link>
+            <x-admin.nav-link :href="route('admin.faqs.index')" icon="circle" :active="request()->routeIs('admin.faqs.*')">
+                FAQ
             </x-admin.nav-link>
         @endcan
 

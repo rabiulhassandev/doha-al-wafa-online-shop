@@ -5,9 +5,12 @@ use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CollectionController;
 use App\Http\Controllers\Admin\ColorController;
+use App\Http\Controllers\Admin\ContactMessageController;
+use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DeliveryZoneController;
+use App\Http\Controllers\Admin\FaqController;
 use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\OrderDocumentController;
@@ -16,6 +19,7 @@ use App\Http\Controllers\Admin\OrderItemController;
 use App\Http\Controllers\Admin\OrderNoteController;
 use App\Http\Controllers\Admin\OrderPaymentController;
 use App\Http\Controllers\Admin\OrderStatusController;
+use App\Http\Controllers\Admin\PageController;
 use App\Http\Controllers\Admin\ProductColorController;
 use App\Http\Controllers\Admin\ProductColorPositionController;
 use App\Http\Controllers\Admin\ProductController;
@@ -30,6 +34,7 @@ use App\Http\Controllers\Admin\SizeGuideController;
 use App\Http\Controllers\Admin\StaffController;
 use App\Http\Controllers\Admin\StockAdjustmentController;
 use App\Http\Controllers\Admin\StockMovementController;
+use App\Http\Controllers\Admin\SubscriberController;
 use App\Http\Controllers\Admin\VariantSearchController;
 use Illuminate\Support\Facades\Route;
 
@@ -72,6 +77,14 @@ Route::middleware(['auth', 'can:access-admin'])->group(function (): void {
         Route::get('customers', [CustomerController::class, 'index'])->name('customers.index');
         Route::get('customers/{customer}', [CustomerController::class, 'show'])->name('customers.show');
         Route::put('customers/{customer}', [CustomerController::class, 'update'])->name('customers.update');
+
+        Route::get('messages', [ContactMessageController::class, 'index'])->name('messages.index');
+        Route::get('messages/{message}', [ContactMessageController::class, 'show'])->name('messages.show');
+        Route::delete('messages/{message}', [ContactMessageController::class, 'destroy'])->name('messages.destroy');
+
+        Route::get('subscribers', [SubscriberController::class, 'index'])->name('subscribers.index');
+        Route::get('subscribers/export', [SubscriberController::class, 'export'])->name('subscribers.export');
+        Route::delete('subscribers/{subscriber}', [SubscriberController::class, 'destroy'])->name('subscribers.destroy');
     });
 
     Route::middleware('can:manage-catalog')->group(function (): void {
@@ -114,5 +127,9 @@ Route::middleware(['auth', 'can:access-admin'])->group(function (): void {
 
         Route::resource('staff', StaffController::class)->except('show');
         Route::resource('delivery-zones', DeliveryZoneController::class)->except('show');
+
+        Route::resource('coupons', CouponController::class)->except('show');
+        Route::resource('pages', PageController::class)->except('show');
+        Route::resource('faqs', FaqController::class)->except('show');
     });
 });

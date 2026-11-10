@@ -34,5 +34,6 @@ final readonly class CheckoutDetails
         public OrderChannel $channel = OrderChannel::Web,
         // Dirhams. Set by the team on orders entered by hand; null charges the area's usual fee.
         public ?int $deliveryFee = null,
+        public ?string $couponCode = null,
     ) {}
 }

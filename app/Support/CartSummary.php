@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Enums\CartLineStatus;
+use App\Models\Coupon;
 use App\Models\DeliveryZone;
 use Illuminate\Support\Collection;
 
@@ -12,13 +13,41 @@ use Illuminate\Support\Collection;
 final readonly class CartSummary
 {
     /**
+     * Why the coupon does not apply, in the shopper's language, or null when it does or there is none.
+     */
+    public ?string $couponProblem;
+
+    /**
      * @param  Collection<int, CartLine>  $lines
      */
     public function __construct(
         public Collection $lines,
         public ?DeliveryZone $deliveryZone,
         public ?int $storeFreeDeliveryThreshold,
-    ) {}
+        public ?Coupon $coupon = null,
+    ) {
+        $this->couponProblem = $coupon?->problemFor($this->subtotal());
+    }
+
+    /**
+     * Get the same lines priced for another delivery area.
+     */
+    public function forDeliveryZone(?DeliveryZone $deliveryZone): self
+    {
+        return new self($this->lines, $deliveryZone, $this->storeFreeDeliveryThreshold, $this->coupon);
+    }
+
+    /**
+     * Get the coupon discount, or 0 when there is no coupon or it does not apply.
+     */
+    public function discount(): int
+    {
+        if ($this->coupon === null || $this->couponProblem !== null) {
+            return 0;
+        }
+
+        return $this->coupon->discountFor($this->subtotal(), $this->deliveryFee());
+    }
 
     public function isEmpty(): bool
     {
@@ -68,7 +97,7 @@ final readonly class CartSummary
 
     public function total(): int
     {
-        return $this->subtotal() + ($this->deliveryFee() ?? 0);
+        return $this->subtotal() - $this->discount() + ($this->deliveryFee() ?? 0);
     }
 
     /**

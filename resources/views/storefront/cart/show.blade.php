@@ -31,6 +31,7 @@
                 <aside class="mt-8 space-y-5 rounded-2xl bg-white p-5 lg:sticky lg:top-24 lg:mt-0">
                     @include('storefront.cart.delivery-area', ['summary' => $summary, 'deliveryZones' => $deliveryZones])
                     @include('storefront.cart.totals', ['summary' => $summary])
+                    @include('storefront.cart.coupon', ['summary' => $summary])
 
                     @if ($summary->hasUnavailableLines())
                         <x-store.button size="lg" class="w-full" disabled>{{ __('Checkout') }}</x-store.button>

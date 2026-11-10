@@ -143,6 +143,12 @@
                         <dt class="text-ink-700">{{ __('Delivery') }} <span class="text-ink-500">({{ $order->translated('delivery_zone_name') }})</span></dt>
                         <dd class="font-medium tabular-nums">{{ $order->delivery_fee === 0 ? __('Free') : Money::format($order->delivery_fee, $locale) }}</dd>
                     </div>
+                    @if ($order->discount_total > 0)
+                        <div class="flex justify-between gap-4 text-success-700">
+                            <dt>{{ __('Discount') }} @if ($order->coupon_code)<span dir="ltr">({{ $order->coupon_code }})</span>@endif</dt>
+                            <dd class="font-medium tabular-nums">−{{ Money::format($order->discount_total, $locale) }}</dd>
+                        </div>
+                    @endif
                     <div class="flex justify-between gap-4 border-t border-sand-200 pt-3 text-base">
                         <dt class="font-semibold">{{ __('To pay on delivery') }}</dt>
                         <dd class="font-semibold tabular-nums">{{ Money::format($order->grand_total, $locale) }}</dd>

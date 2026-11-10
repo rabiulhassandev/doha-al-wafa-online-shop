@@ -2,21 +2,26 @@
 
 use App\Http\Controllers\Storefront\BuyNowController;
 use App\Http\Controllers\Storefront\CartController;
+use App\Http\Controllers\Storefront\CartCouponController;
 use App\Http\Controllers\Storefront\CartDeliveryZoneController;
 use App\Http\Controllers\Storefront\CartItemController;
 use App\Http\Controllers\Storefront\CategoryController;
 use App\Http\Controllers\Storefront\CheckoutController;
 use App\Http\Controllers\Storefront\CollectionController;
+use App\Http\Controllers\Storefront\ContactController;
 use App\Http\Controllers\Storefront\HomeController;
 use App\Http\Controllers\Storefront\LocaleRedirectController;
 use App\Http\Controllers\Storefront\OrderConfirmationController;
+use App\Http\Controllers\Storefront\PageController;
 use App\Http\Controllers\Storefront\ProductCardController;
 use App\Http\Controllers\Storefront\ProductController;
 use App\Http\Controllers\Storefront\SearchController;
 use App\Http\Controllers\Storefront\SearchSuggestionController;
 use App\Http\Controllers\Storefront\ShopController;
+use App\Http\Controllers\Storefront\SubscriberController;
 use App\Http\Controllers\Storefront\TrackOrderController;
 use App\Http\Controllers\Storefront\WishlistController;
+use App\Http\Middleware\ApplyCouponFromLink;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Support\Facades\Route;
 
@@ -24,7 +29,7 @@ Route::get('/', LocaleRedirectController::class)->name('locale.redirect');
 
 Route::prefix('{locale}')
     ->where(['locale' => implode('|', array_keys(config('shop.locales')))])
-    ->middleware(SetLocale::class)
+    ->middleware([SetLocale::class, ApplyCouponFromLink::class])
     ->group(function (): void {
         Route::get('/', HomeController::class)->name('home');
 
@@ -47,6 +52,15 @@ Route::prefix('{locale}')
         Route::get('orders/{order:number}/thank-you', OrderConfirmationController::class)
             ->middleware('signed')
             ->name('orders.thank-you');
+        Route::get('pages/{page:slug}', [PageController::class, 'show'])->name('pages.show');
+        Route::get('faq', [PageController::class, 'faq'])->name('pages.faq');
+        Route::get('contact', [ContactController::class, 'show'])->name('contact.show');
+        Route::post('contact', [ContactController::class, 'store'])
+            ->middleware('throttle:5,10')
+            ->name('contact.store');
+        Route::post('subscribe', [SubscriberController::class, 'store'])
+            ->middleware('throttle:10,1')
+            ->name('subscribers.store');
         Route::get('track', [TrackOrderController::class, 'show'])->name('track.show');
         Route::post('track', [TrackOrderController::class, 'lookup'])
             ->middleware('throttle:10,1')
@@ -57,6 +71,8 @@ Route::prefix('{locale}')
             Route::patch('bag/items/{item}', [CartItemController::class, 'update'])->name('cart.items.update');
             Route::delete('bag/items/{item}', [CartItemController::class, 'destroy'])->name('cart.items.destroy');
             Route::put('bag/delivery-area', [CartDeliveryZoneController::class, 'update'])->name('cart.delivery-zone.update');
+            Route::post('bag/coupon', [CartCouponController::class, 'store'])->name('cart.coupon.store');
+            Route::delete('bag/coupon', [CartCouponController::class, 'destroy'])->name('cart.coupon.destroy');
             Route::post('checkout/buy-now', [BuyNowController::class, 'store'])->name('checkout.buy-now');
         });
 

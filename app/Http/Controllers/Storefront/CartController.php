@@ -16,7 +16,7 @@ class CartController extends Controller
     public function show(Request $request, CartService $cartService): View
     {
         return view('storefront.cart.show', [
-            'summary' => $cartService->summary($cartService->current($request), $cartService->deliveryZone($request)),
+            'summary' => $cartService->summary($cartService->current($request), $cartService->deliveryZone($request), $cartService->coupon($request)),
             'deliveryZones' => DeliveryZone::query()->active()->ordered()->get(),
         ]);
     }
@@ -27,7 +27,7 @@ class CartController extends Controller
     public function drawer(Request $request, CartService $cartService): View
     {
         return view('storefront.cart.drawer', [
-            'summary' => $cartService->summary($cartService->current($request), $cartService->deliveryZone($request)),
+            'summary' => $cartService->summary($cartService->current($request), $cartService->deliveryZone($request), $cartService->coupon($request)),
         ]);
     }
 }

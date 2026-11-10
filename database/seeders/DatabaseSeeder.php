@@ -30,6 +30,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             CatalogDefaultsSeeder::class,
             DeliveryZoneSeeder::class,
+            ContentSeeder::class,
             DemoProductsSeeder::class,
         ]);
     }

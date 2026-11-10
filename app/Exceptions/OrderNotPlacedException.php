@@ -39,6 +39,14 @@ class OrderNotPlacedException extends RuntimeException
     }
 
     /**
+     * The discount code cannot be used for this order, such as a first-order code on a returning number.
+     */
+    public static function couponProblem(string $problem): self
+    {
+        return new self(__(':problem Remove the code to place your order.', ['problem' => $problem]));
+    }
+
+    /**
      * Prices or lines changed since the page was shown, such as a bag edited in another tab.
      */
     public static function orderChanged(): self

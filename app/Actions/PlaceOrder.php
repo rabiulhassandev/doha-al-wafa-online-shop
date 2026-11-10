@@ -9,6 +9,7 @@ use App\Enums\StockMovementReason;
 use App\Exceptions\OrderNotPlacedException;
 use App\Mail\NewOrderAlert;
 use App\Mail\OrderPlaced;
+use App\Models\Coupon;
 use App\Models\Customer;
 use App\Models\DeliveryZone;
 use App\Models\Order;
@@ -66,7 +67,8 @@ class PlaceOrder
         }
 
         $order = DB::transaction(function () use ($quantities, $details, $expectedSubtotal, $placedBy): Order {
-            $summary = $this->lockAndPrice($quantities, $details->deliveryZone, withinShopperLimit: $placedBy === null);
+            $coupon = $this->lockCoupon($details);
+            $summary = $this->lockAndPrice($quantities, $details->deliveryZone, $coupon, withinShopperLimit: $placedBy === null);
 
             if ($expectedSubtotal !== null && $summary->subtotal() !== $expectedSubtotal) {
                 throw OrderNotPlacedException::orderChanged();
@@ -77,6 +79,14 @@ class PlaceOrder
             foreach ($summary->lines as $line) {
                 $order->items()->create(OrderItem::attributesFor($line));
                 $this->adjustStock->change($line->variant, -$line->quantity, StockMovementReason::OrderPlaced, $placedBy, $order->number, order: $order);
+            }
+
+            if ($order->coupon_id !== null) {
+                $coupon->redemptions()->create([
+                    'order_id' => $order->id,
+                    'phone' => $order->customer_phone,
+                    'discount' => $order->discount_total,
+                ]);
             }
 
             $this->paymentGateways->for($details->paymentMethod)->createPayment($order);
@@ -99,12 +109,37 @@ class PlaceOrder
     }
 
     /**
+     * Lock the discount code, so two orders cannot both take its last use, and check this customer may use it.
+     *
+     * A code that only falls short of its minimum spend is not an error: the order is placed without the
+     * discount, as the shopper's totals already showed.
+     */
+    private function lockCoupon(CheckoutDetails $details): ?Coupon
+    {
+        if (blank($details->couponCode)) {
+            return null;
+        }
+
+        $code = Coupon::normalizeCode($details->couponCode);
+        $coupon = Coupon::query()->lockForUpdate()->firstWhere('code', $code);
+        $problem = $coupon === null
+            ? __('The code :code is not valid.', ['code' => $code])
+            : $coupon->availabilityProblem() ?? $coupon->problemForPhone($details->phone);
+
+        if ($problem !== null) {
+            throw OrderNotPlacedException::couponProblem($problem);
+        }
+
+        return $coupon;
+    }
+
+    /**
      * Lock the ordered colors and sizes and price them, stopping when one cannot be ordered as asked.
      *
      * @param  array<int, int>  $quantities
      * @param  bool  $withinShopperLimit  false for orders the team enters, which may pass the per-item limit
      */
-    private function lockAndPrice(array $quantities, DeliveryZone $deliveryZone, bool $withinShopperLimit): CartSummary
+    private function lockAndPrice(array $quantities, DeliveryZone $deliveryZone, ?Coupon $coupon, bool $withinShopperLimit): CartSummary
     {
         // Locking in ID order keeps two orders for the same pieces from waiting on each other forever.
         $variants = ProductVariant::query()
@@ -126,7 +161,7 @@ class PlaceOrder
             return $line;
         });
 
-        return new CartSummary($lines->values(), $deliveryZone, $this->cartService->storeFreeDeliveryThreshold());
+        return new CartSummary($lines->values(), $deliveryZone, $this->cartService->storeFreeDeliveryThreshold(), $coupon);
     }
 
     /**
@@ -156,6 +191,8 @@ class PlaceOrder
         $zone = $details->deliveryZone;
         [$estimateFrom, $estimateTo] = $zone->deliveryWindow($placedAt, $this->settings->deliveryDaysOff());
         $deliveryFee = $details->deliveryFee ?? $summary->deliveryFee();
+        // A code that falls short of its minimum spend gives no discount and is not recorded on the order.
+        $appliedCoupon = $summary->couponProblem === null ? $summary->coupon : null;
 
         $order = $customer->orders()->create([
             'checkout_token' => $details->checkoutToken,
@@ -165,10 +202,12 @@ class PlaceOrder
             'payment_status' => PaymentStatus::Pending,
             'currency' => 'QAR',
             'subtotal' => $summary->subtotal(),
-            'discount_total' => 0,
+            'discount_total' => $summary->discount(),
+            'coupon_id' => $appliedCoupon?->id,
+            'coupon_code' => $appliedCoupon?->code,
             'delivery_fee' => $deliveryFee,
             'tax_total' => 0,
-            'grand_total' => $summary->subtotal() + $deliveryFee,
+            'grand_total' => $summary->subtotal() - $summary->discount() + $deliveryFee,
             'customer_name' => $details->name,
             'customer_phone' => $details->phone->e164(),
             'customer_email' => $details->email,

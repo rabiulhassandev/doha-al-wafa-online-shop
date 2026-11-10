@@ -40,6 +40,12 @@
         <td style="padding: 4px 0 0; color: #3d3631;">{{ __('Delivery') }} ({{ $order->translated('delivery_zone_name') }})</td>
         <td style="padding: 4px 0 0; text-align: {{ $end }};">{{ $order->delivery_fee === 0 ? __('Free') : Money::format($order->delivery_fee, $locale) }}</td>
     </tr>
+    @if ($order->discount_total > 0)
+        <tr>
+            <td style="padding: 4px 0 0; color: #2f6b4f;">{{ __('Discount') }}@if ($order->coupon_code) ({{ $order->coupon_code }})@endif</td>
+            <td style="padding: 4px 0 0; text-align: {{ $end }}; color: #2f6b4f;">−{{ Money::format($order->discount_total, $locale) }}</td>
+        </tr>
+    @endif
     <tr>
         <td style="padding: 8px 0 0; font-size: 16px; font-weight: bold;">{{ __('Total') }}</td>
         <td style="padding: 8px 0 0; font-size: 16px; font-weight: bold; text-align: {{ $end }};">{{ Money::format($order->grand_total, $locale) }}</td>

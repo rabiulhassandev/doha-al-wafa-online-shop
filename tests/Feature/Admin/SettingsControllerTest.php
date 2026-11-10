@@ -29,6 +29,7 @@ function settingsPayload(array $overrides = []): array
         'preferred_date_enabled' => '1',
         'max_quantity_per_item' => '10',
         'order_alert_email' => '',
+        'consent_bar_enabled' => '0',
         ...$overrides,
     ];
 }
@@ -152,4 +153,27 @@ it('rejects an invalid new order email', function () {
     $this->actingAs(User::factory()->owner()->create())
         ->put(route('admin.settings.update'), settingsPayload(['order_alert_email' => 'not an email']))
         ->assertSessionHasErrors('order_alert_email');
+});
+
+it('saves the trust badge, cookie and WhatsApp settings', function () {
+    $this->actingAs(User::factory()->owner()->create())
+        ->put(route('admin.settings.update'), settingsPayload([
+            'exchange_promise_en' => 'Exchange within 7 days',
+            'consent_bar_enabled' => '1',
+            'whatsapp_message_on_the_way_ar' => 'طلبك :number في الطريق.',
+        ]))
+        ->assertRedirectToRoute('admin.settings.edit');
+
+    $settings = app(Settings::class);
+    expect($settings->get('exchange_promise_en'))->toBe('Exchange within 7 days');
+    expect($settings->get('consent_bar_enabled'))->toBeTrue();
+    expect($settings->get('whatsapp_message_on_the_way_ar'))->toBe('طلبك :number في الطريق.');
+});
+
+it('shows the built-in WhatsApp wording as a guide', function () {
+    $this->actingAs(User::factory()->owner()->create())
+        ->get(route('admin.settings.edit'))
+        ->assertOk()
+        ->assertSee('Hello :name, this is :store.')
+        ->assertSee('مرحباً :name، معك :store.');
 });

@@ -46,6 +46,12 @@
                 @endif
             </dd>
         </div>
+        @if ($summary->coupon && $summary->couponProblem === null)
+            <div class="flex justify-between gap-4 text-success-700">
+                <dt>{{ __('Discount') }} <span dir="ltr">({{ $summary->coupon->code }})</span></dt>
+                <dd class="font-medium tabular-nums">{{ $summary->discount() > 0 ? '−'.Money::format($summary->discount(), $locale) : $summary->coupon->benefit() }}</dd>
+            </div>
+        @endif
         <div class="flex justify-between gap-4 border-t border-sand-200 pt-3 text-base">
             <dt class="font-semibold">{{ $deliveryFee === null ? __('Total before delivery') : __('Total') }}</dt>
             <dd class="font-semibold tabular-nums">{{ Money::format($summary->total(), $locale) }}</dd>

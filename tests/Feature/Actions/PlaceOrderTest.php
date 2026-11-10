@@ -8,6 +8,7 @@ use App\Enums\StockMovementReason;
 use App\Exceptions\OrderNotPlacedException;
 use App\Mail\NewOrderAlert;
 use App\Mail\OrderPlaced;
+use App\Models\Coupon;
 use App\Models\Customer;
 use App\Models\Order;
 use App\Models\Product;
@@ -164,6 +165,63 @@ it('sends no emails without an address to send them to', function () {
     placeOrder([$variant->id => 1]);
 
     Mail::assertNothingQueued();
+});
+
+describe('discount codes', function () {
+    it('takes the discount off the order and records the use', function () {
+        $coupon = Coupon::factory()->create(['code' => 'EID10', 'value' => 10]);
+        $variant = listedProduct(['price' => 18500])->variants()->sole();
+
+        $order = placeOrder([$variant->id => 2], checkoutDetails(['couponCode' => 'eid10']));
+
+        expect([$order->subtotal, $order->discount_total, $order->delivery_fee, $order->grand_total])->toBe([37000, 3700, 2500, 35800]);
+        expect([$order->coupon_id, $order->coupon_code])->toBe([$coupon->id, 'EID10']);
+        $redemption = $coupon->redemptions()->sole();
+        expect([$redemption->order_id, $redemption->phone, $redemption->discount])->toBe([$order->id, '+97455551234', 3700]);
+        expect($order->payments()->sole()->amount)->toBe(35800);
+    });
+
+    it('takes the delivery fee off with a free delivery code', function () {
+        Coupon::factory()->freeDelivery()->create(['code' => 'FREESHIP']);
+        $variant = listedProduct(['price' => 18500])->variants()->sole();
+
+        $order = placeOrder([$variant->id => 1], checkoutDetails(['couponCode' => 'FREESHIP']));
+
+        expect([$order->delivery_fee, $order->discount_total, $order->grand_total])->toBe([2500, 2500, 18500]);
+    });
+
+    it('places the order without the discount when the bag is under the minimum spend', function () {
+        $coupon = Coupon::factory()->create(['code' => 'BIG50', 'min_subtotal' => 50000]);
+        $variant = listedProduct(['price' => 18500])->variants()->sole();
+
+        $order = placeOrder([$variant->id => 1], checkoutDetails(['couponCode' => 'BIG50']));
+
+        expect([$order->discount_total, $order->coupon_code])->toBe([0, null]);
+        expect($coupon->redemptions()->count())->toBe(0);
+    });
+
+    it('refuses codes this customer cannot use, and takes nothing', function () {
+        Coupon::factory()->create(['code' => 'WELCOME', 'first_order_only' => true]);
+        $variant = listedProduct(stockByColor: ['navy' => ['56' => 3]])->variants()->sole();
+        placeOrder([$variant->id => 1]);
+
+        expect(fn () => placeOrder([$variant->id => 1], checkoutDetails(['couponCode' => 'WELCOME'])))
+            ->toThrow(OrderNotPlacedException::class, 'The code WELCOME is for first orders only. Remove the code to place your order.');
+
+        expect($variant->refresh()->stock)->toBe(2);
+        $this->assertDatabaseCount('orders', 1);
+    });
+
+    it('lets only one order take the last use of a code', function () {
+        Coupon::factory()->create(['code' => 'ONCE', 'max_uses' => 1]);
+        $variant = listedProduct(stockByColor: ['navy' => ['56' => 3]])->variants()->sole();
+        placeOrder([$variant->id => 1], checkoutDetails(['couponCode' => 'ONCE']));
+
+        expect(fn () => placeOrder([$variant->id => 1], checkoutDetails(['couponCode' => 'ONCE', 'phone' => QatarPhone::tryParse('6666 1234')])))
+            ->toThrow(OrderNotPlacedException::class, 'The code ONCE has been fully used.');
+
+        $this->assertDatabaseCount('orders', 1);
+    });
 });
 
 describe('orders the team enters by hand', function () {

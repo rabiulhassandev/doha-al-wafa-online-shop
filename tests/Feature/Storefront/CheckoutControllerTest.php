@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Storefront\BuyNowController;
 use App\Models\CartItem;
+use App\Models\Coupon;
 use App\Models\DeliveryZone;
 use App\Models\Order;
 use App\Services\CartService;
@@ -292,6 +293,35 @@ describe('placing an order', function () {
         submitCheckout($item, $payload)
             ->assertRedirectToRoute('checkout.show', ['locale' => 'en'])
             ->assertSessionHasErrors(['order' => 'Too many attempts. Please wait a few minutes and try again.']);
+    });
+
+    it('places the order with the applied code and forgets the code afterwards', function () {
+        Coupon::factory()->fixed(2000)->create(['code' => 'EID20']);
+        $item = bagWithOnePiece();
+
+        $response = $this->withCookie(CartService::COOKIE, $item->cart->token)
+            ->withSession([CartService::COUPON_SESSION_KEY => 'EID20'])
+            ->post(route('checkout.store', ['locale' => 'en']), checkoutPayload(DeliveryZone::factory()->create(['fee' => 2500])))
+            ->assertSessionMissing(CartService::COUPON_SESSION_KEY);
+
+        $order = Order::query()->sole();
+        expect([$order->discount_total, $order->grand_total, $order->coupon_code])->toBe([2000, 19000, 'EID20']);
+        $this->get($response->headers->get('Location'))->assertSee('Discount')->assertSee('−QAR 20');
+    });
+
+    it('keeps the shopper’s details when a code cannot be used for them', function () {
+        Coupon::factory()->create(['code' => 'WELCOME', 'first_order_only' => true]);
+        Order::factory()->create(['customer_phone' => '+97455551234']);
+        $item = bagWithOnePiece();
+
+        $this->withCookie(CartService::COOKIE, $item->cart->token)
+            ->withSession([CartService::COUPON_SESSION_KEY => 'WELCOME'])
+            ->post(route('checkout.store', ['locale' => 'en']), checkoutPayload(DeliveryZone::factory()->create()))
+            ->assertRedirectToRoute('checkout.show', ['locale' => 'en'])
+            ->assertSessionHasErrors(['order' => 'The code WELCOME is for first orders only. Remove the code to place your order.'])
+            ->assertSessionHasInput('building_number', '12');
+
+        $this->assertDatabaseCount('orders', 1);
     });
 
     it('sends a bag with a sold out line back to the bag', function () {

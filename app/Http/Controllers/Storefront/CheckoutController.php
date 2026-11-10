@@ -95,6 +95,7 @@ class CheckoutController extends Controller
 
         $this->forgetOrderedItems($request, $buyNowVariant, array_keys($quantities));
         $request->session()->put(CartService::DELIVERY_ZONE_SESSION_KEY, $order->delivery_zone_id);
+        $request->session()->forget(CartService::COUPON_SESSION_KEY);
 
         $payment = $order->payments()->latest('id')->firstOrFail();
 
@@ -111,9 +112,10 @@ class CheckoutController extends Controller
         $buyNow = $request->session()->get(BuyNowController::SESSION_KEY);
         $buyNowVariant = is_array($buyNow) ? ProductVariant::query()->find($buyNow['variant_id'] ?? null) : null;
 
+        $coupon = $this->cartService->coupon($request);
         $summary = $buyNowVariant !== null
-            ? $this->cartService->summaryFor($buyNowVariant, (int) $buyNow['quantity'], $deliveryZone)
-            : $this->cartService->summary($this->cartService->current($request), $deliveryZone);
+            ? $this->cartService->summaryFor($buyNowVariant, (int) $buyNow['quantity'], $deliveryZone, $coupon)
+            : $this->cartService->summary($this->cartService->current($request), $deliveryZone, $coupon);
 
         return [$summary, $buyNowVariant];
     }
@@ -151,25 +153,27 @@ class CheckoutController extends Controller
     }
 
     /**
-     * Get each delivery area's fee, total and choosable delivery days, so the form updates without reloading.
+     * Get each delivery area's fee, discount, total and choosable delivery days, so the form updates without reloading.
      *
      * @param  Collection<int, DeliveryZone>  $deliveryZones
-     * @return array<int, array{id: int, feeText: string, totalText: string, dates: list<array{value: string, label: string}>}>
+     * @return array<int, array{id: int, feeText: string, discountText: string|null, totalText: string, dates: list<array{value: string, label: string}>}>
      */
     private function zoneOptions(Collection $deliveryZones, CartSummary $summary): array
     {
         $locale = app()->getLocale();
         $now = CarbonImmutable::now();
         $daysOff = $this->settings->deliveryDaysOff();
-        $subtotal = $summary->subtotal();
 
-        return $deliveryZones->mapWithKeys(function (DeliveryZone $zone) use ($locale, $now, $daysOff, $subtotal, $summary): array {
-            $fee = $zone->feeFor($subtotal, $summary->storeFreeDeliveryThreshold);
+        return $deliveryZones->mapWithKeys(function (DeliveryZone $zone) use ($locale, $now, $daysOff, $summary): array {
+            $zoneSummary = $summary->forDeliveryZone($zone);
+            $fee = $zoneSummary->deliveryFee();
+            $discount = $zoneSummary->discount();
 
             return [$zone->id => [
                 'id' => $zone->id,
                 'feeText' => $fee === 0 ? __('Free') : Money::format($fee, $locale),
-                'totalText' => Money::format($subtotal + $fee, $locale),
+                'discountText' => $discount > 0 ? '−'.Money::format($discount, $locale) : null,
+                'totalText' => Money::format($zoneSummary->total(), $locale),
                 'dates' => array_map(
                     fn (CarbonImmutable $day): array => ['value' => $day->toDateString(), 'label' => $day->locale($locale)->translatedFormat('l j F')],
                     $zone->choosableDeliveryDays($now, $daysOff),

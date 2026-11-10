@@ -13,7 +13,7 @@ class OrderExportController extends Controller
 {
     private const COLUMNS = [
         'Order', 'Placed', 'Status', 'Payment', 'Channel', 'Customer', 'Phone', 'Email',
-        'Area', 'Address', 'Pieces', 'Subtotal (QAR)', 'Delivery (QAR)', 'Total (QAR)',
+        'Area', 'Address', 'Pieces', 'Subtotal (QAR)', 'Delivery (QAR)', 'Discount (QAR)', 'Coupon', 'Total (QAR)',
     ];
 
     /**
@@ -45,6 +45,8 @@ class OrderExportController extends Controller
                     (int) $order->items_sum_quantity,
                     Money::toInput($order->subtotal),
                     Money::toInput($order->delivery_fee),
+                    Money::toInput($order->discount_total),
+                    $order->coupon_code,
                     Money::toInput($order->grand_total),
                 ], escape: '');
             }

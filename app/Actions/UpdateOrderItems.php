@@ -68,10 +68,13 @@ class UpdateOrderItems
             }
 
             $subtotal = (int) $locked->items()->sum('line_total');
+            // The discount stays as it was when ordered, but never more than the order is worth.
+            $discount = min($locked->discount_total, $subtotal + $deliveryFee);
             $locked->update([
                 'subtotal' => $subtotal,
+                'discount_total' => $discount,
                 'delivery_fee' => $deliveryFee,
-                'grand_total' => $subtotal - $locked->discount_total + $deliveryFee,
+                'grand_total' => $subtotal - $discount + $deliveryFee,
             ]);
             $locked->payments()->where('status', PaymentStatus::Pending)->update(['amount' => $locked->grand_total]);
 

@@ -37,6 +37,9 @@
         </a>
 
         <x-store.announcement-bar />
+        @if (session('coupon_notice'))
+            <p class="bg-success-50 px-4 py-2 text-center text-sm font-medium text-success-700" role="status">{{ session('coupon_notice') }}</p>
+        @endif
         <x-store.header />
         {{-- Kept outside the header so these full-screen overlays cover the whole viewport. --}}
         <x-store.mobile-menu />
@@ -48,5 +51,6 @@
         </main>
 
         <x-store.footer />
+        <x-store.consent-bar />
     </body>
 </html>
