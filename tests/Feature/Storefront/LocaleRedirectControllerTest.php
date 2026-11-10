@@ -20,3 +20,8 @@ it('falls back to the browser language when the saved language is not supported'
         ->get('/', ['Accept-Language' => 'ar'])
         ->assertRedirectToRoute('home', ['locale' => 'ar']);
 });
+
+it('keeps campaign tags and discount links on the way', function () {
+    $this->get('/?utm_source=instagram&utm_medium=bio&coupon=EID10')
+        ->assertRedirectToRoute('home', ['locale' => 'en', 'utm_source' => 'instagram', 'utm_medium' => 'bio', 'coupon' => 'EID10']);
+});

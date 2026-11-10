@@ -100,6 +100,7 @@ class OrderController extends Controller
             'items.productVariant',
             'statusHistories.user',
             'payments',
+            'shortLink',
             'customer' => fn ($query) => $query->withCount('orders'),
         ]);
 

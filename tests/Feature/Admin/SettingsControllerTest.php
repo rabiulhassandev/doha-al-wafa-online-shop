@@ -30,6 +30,7 @@ function settingsPayload(array $overrides = []): array
         'max_quantity_per_item' => '10',
         'order_alert_email' => '',
         'consent_bar_enabled' => '0',
+        'whatsapp_button_enabled' => '1',
         ...$overrides,
     ];
 }
@@ -176,4 +177,81 @@ it('shows the built-in WhatsApp wording as a guide', function () {
         ->assertOk()
         ->assertSee('Hello :name, this is :store.')
         ->assertSee('مرحباً :name، معك :store.');
+});
+
+describe('ads and analytics', function () {
+    it('saves the pixel IDs and keeps access tokens encrypted', function () {
+        $this->actingAs(User::factory()->owner()->create())
+            ->put(route('admin.settings.update'), settingsPayload([
+                'meta_pixel_id' => '1234567890123456',
+                'meta_capi_token' => 'EAAB-meta-token',
+                'tiktok_pixel_id' => 'C1A2B3C4D5E6F7G8H9I0',
+                'tiktok_events_token' => 'tiktok-token',
+                'snap_pixel_id' => '1a2b3c4d-1a2b-1a2b-1a2b-1a2b3c4d5e6f',
+                'ga4_measurement_id' => 'G-AB12CD34EF',
+                'whatsapp_button_enabled' => '0',
+            ]))
+            ->assertRedirectToRoute('admin.settings.edit')
+            ->assertSessionHasNoErrors();
+
+        $settings = app(Settings::class);
+        expect([$settings->get('meta_pixel_id'), $settings->get('tiktok_pixel_id'), $settings->get('snap_pixel_id'), $settings->get('ga4_measurement_id')])
+            ->toBe(['1234567890123456', 'C1A2B3C4D5E6F7G8H9I0', '1a2b3c4d-1a2b-1a2b-1a2b-1a2b3c4d5e6f', 'G-AB12CD34EF']);
+        expect($settings->secret('meta_capi_token'))->toBe('EAAB-meta-token');
+        expect($settings->secret('tiktok_events_token'))->toBe('tiktok-token');
+        expect(Setting::query()->where('key', 'meta_capi_token')->value('value'))->not->toContain('EAAB-meta-token');
+        expect($settings->get('whatsapp_button_enabled'))->toBeFalse();
+    });
+
+    it('keeps a saved token when its field is left empty, and removes it on request', function () {
+        app(Settings::class)->set([
+            'meta_capi_token' => Settings::encryptSecret('meta-token'),
+            'tiktok_events_token' => Settings::encryptSecret('tiktok-token'),
+        ]);
+
+        $this->actingAs(User::factory()->owner()->create())
+            ->put(route('admin.settings.update'), settingsPayload([
+                'meta_capi_token' => '',
+                'tiktok_events_token' => '',
+                'tiktok_events_token_clear' => '1',
+            ]))
+            ->assertSessionHasNoErrors();
+
+        $settings = app(Settings::class);
+        expect($settings->secret('meta_capi_token'))->toBe('meta-token');
+        expect($settings->secret('tiktok_events_token'))->toBeNull();
+        expect(Setting::query()->whereIn('key', ['meta_capi_token_clear', 'tiktok_events_token_clear'])->exists())->toBeFalse();
+    });
+
+    it('never shows a saved token', function () {
+        app(Settings::class)->set(['meta_capi_token' => Settings::encryptSecret('EAAB-meta-token')]);
+
+        $this->actingAs(User::factory()->owner()->create())
+            ->get(route('admin.settings.edit'))
+            ->assertOk()
+            ->assertSee('A token is saved. Leave this empty to keep it.')
+            ->assertDontSee('EAAB-meta-token');
+    });
+
+    it('checks the IDs', function (string $field, string $value) {
+        $this->actingAs(User::factory()->owner()->create())
+            ->put(route('admin.settings.update'), settingsPayload([$field => $value]))
+            ->assertSessionHasErrors($field);
+    })->with([
+        'Meta pixel with letters' => ['meta_pixel_id', 'abc123'],
+        'TikTok pixel with spaces' => ['tiktok_pixel_id', 'C1A2 B3C4'],
+        'Snap pixel not in its format' => ['snap_pixel_id', '12345'],
+        'GA4 without G-' => ['ga4_measurement_id', 'UA-12345-1'],
+        'feed password too short' => ['feed_token', 'abc'],
+    ]);
+
+    it('shows the feed addresses with the feed password', function () {
+        app(Settings::class)->set(['feed_token' => 'secret-feed-123']);
+
+        $this->actingAs(User::factory()->owner()->create())
+            ->get(route('admin.settings.edit'))
+            ->assertOk()
+            ->assertSee(url('feeds/meta.csv').'?token=secret-feed-123')
+            ->assertSee(e(url('feeds/tiktok.csv').'?locale=ar&token=secret-feed-123'), false);
+    });
 });

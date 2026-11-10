@@ -9,7 +9,8 @@ use Illuminate\Http\Request;
 class LocaleRedirectController extends Controller
 {
     /**
-     * Send the visitor to the home page in their saved or preferred language.
+     * Send the visitor to the home page in their saved or preferred language, keeping campaign
+     * tags and discount links ("/?utm_source=instagram") on the way.
      */
     public function __invoke(Request $request): RedirectResponse
     {
@@ -22,7 +23,7 @@ class LocaleRedirectController extends Controller
             : $request->getPreferredLanguage($supportedLocales);
 
         return redirect()
-            ->route('home', ['locale' => $locale])
+            ->route('home', [...$request->query(), 'locale' => $locale])
             ->header('Vary', 'Accept-Language, Cookie');
     }
 }

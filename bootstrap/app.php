@@ -24,8 +24,8 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Set in the browser by the cookie bar, so it is not encrypted.
-        $middleware->encryptCookies(except: ['tracking_consent']);
+        // Set in the browser by the cookie bar and the ad platforms' scripts, so they are not encrypted.
+        $middleware->encryptCookies(except: ['tracking_consent', '_fbp', '_fbc', '_ttp']);
         // The admin panel and the store each have their own sign-in page, in the store's case per language.
         $storeLocale = function (Request $request): string {
             $locale = (string) $request->segment(1);

@@ -1,11 +1,25 @@
-@props(['title' => null, 'description' => null])
+@props([
+    'title' => null,
+    'description' => null,
+    // Link previews in WhatsApp, Instagram, Facebook, Snapchat and TikTok.
+    'ogType' => 'website',
+    'ogTitle' => null,
+    'ogUrl' => null,
+    'ogImage' => null,
+    'ogImageAlt' => null,
+    // Pages with their own WhatsApp button and a sticky bar leave out the floating one.
+    'whatsAppButton' => true,
+])
 
 @inject('settings', 'App\Services\Settings')
 @inject('localizedUrl', 'App\Support\LocalizedUrl')
+@inject('tracking', 'App\Services\Tracking')
 
 @php
     $locale = app()->getLocale();
     $storeName = $settings->get('store_name');
+    $ogLocales = ['en' => 'en_US', 'ar' => 'ar_AR'];
+    $trackingConfig = $tracking->browserConfig();
 @endphp
 
 <!DOCTYPE html>
@@ -26,7 +40,33 @@
             <link rel="alternate" hreflang="{{ $alternateLocale }}" href="{{ $localizedUrl->current($alternateLocale) }}">
         @endforeach
 
+        <meta property="og:site_name" content="{{ $storeName }}">
+        <meta property="og:type" content="{{ $ogType }}">
+        <meta property="og:title" content="{{ $ogTitle ?? $title ?? $storeName }}">
+        @if ($description)
+            <meta property="og:description" content="{{ $description }}">
+        @endif
+        <meta property="og:url" content="{{ $ogUrl ?? url()->current() }}">
+        <meta property="og:locale" content="{{ $ogLocales[$locale] ?? $locale }}">
+        @foreach (array_diff_key($ogLocales, [$locale => true]) as $alternateOgLocale)
+            <meta property="og:locale:alternate" content="{{ $alternateOgLocale }}">
+        @endforeach
+        @if ($ogImage)
+            <meta property="og:image" content="{{ $ogImage }}">
+            @if ($ogImageAlt)
+                <meta property="og:image:alt" content="{{ $ogImageAlt }}">
+            @endif
+            <meta name="twitter:card" content="summary_large_image">
+        @else
+            <meta name="twitter:card" content="summary">
+        @endif
+
         @stack('head')
+
+        @if ($trackingConfig)
+            {{-- Read by resources/js/store/tracking.js, which loads the pixels once the visitor allows them. --}}
+            <script type="application/json" id="tracking-config">@json($trackingConfig)</script>
+        @endif
 
         @fonts
         @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -51,6 +91,9 @@
         </main>
 
         <x-store.footer />
+        @if ($whatsAppButton)
+            <x-store.whatsapp-button />
+        @endif
         <x-store.consent-bar />
 
         @if ($accountWishlist)

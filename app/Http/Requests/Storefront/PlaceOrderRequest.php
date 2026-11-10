@@ -8,6 +8,8 @@ use App\Rules\QatarPhoneNumber;
 use App\Services\CartService;
 use App\Services\Payments\PaymentGateways;
 use App\Services\Settings;
+use App\Services\Tracking;
+use App\Support\Attribution;
 use App\Support\CheckoutDetails;
 use App\Support\Digits;
 use App\Support\QatarPhone;
@@ -162,6 +164,9 @@ class PlaceOrderRequest extends FormRequest
             userAgent: Str::limit((string) $this->userAgent(), 250, ''),
             couponCode: $this->session()->get(CartService::COUPON_SESSION_KEY),
             userId: $this->user()?->id,
+            attribution: Attribution::fromCookie($this->cookie(Attribution::COOKIE)),
+            adTrackingAllowed: app(Tracking::class)->allowedFor($this),
+            trackingIds: app(Tracking::class)->browserIds($this),
         );
     }
 

@@ -29,6 +29,8 @@ use Illuminate\Support\Facades\URL;
     'zone_number', 'street_number', 'building_number', 'unit', 'landmark', 'latitude', 'longitude',
     'preferred_delivery_date', 'delivery_estimate_from', 'delivery_estimate_to',
     'customer_note', 'admin_note', 'locale', 'ip_address', 'user_agent', 'placed_at',
+    'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'click_id_type', 'click_id',
+    'referrer', 'landing_url', 'short_link_id', 'ad_tracking_allowed', 'tracking_ids',
 ])]
 class Order extends Model
 {
@@ -70,6 +72,8 @@ class Order extends Model
             'delivery_estimate_from' => 'immutable_date',
             'delivery_estimate_to' => 'immutable_date',
             'placed_at' => 'immutable_datetime',
+            'ad_tracking_allowed' => 'boolean',
+            'tracking_ids' => 'array',
         ];
     }
 
@@ -141,6 +145,38 @@ class Order extends Model
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
+    }
+
+    /**
+     * Get the short link the shopper came through, while it still exists.
+     *
+     * @return BelongsTo<ShortLink, $this>
+     */
+    public function shortLink(): BelongsTo
+    {
+        return $this->belongsTo(ShortLink::class);
+    }
+
+    /**
+     * Describe where the order came from for the team, e.g. "instagram / social", "TikTok ad" or "google.com".
+     */
+    public function sourceLabel(): ?string
+    {
+        if (filled($this->utm_source)) {
+            return collect([$this->utm_source, $this->utm_medium])->filter()->implode(' / ');
+        }
+
+        if ($this->click_id_type !== null) {
+            return match ($this->click_id_type) {
+                'meta' => 'Meta ad',
+                'tiktok' => 'TikTok ad',
+                'snapchat' => 'Snapchat ad',
+                'google' => 'Google ad',
+                default => $this->click_id_type,
+            };
+        }
+
+        return $this->referrer ? (parse_url($this->referrer, PHP_URL_HOST) ?: $this->referrer) : null;
     }
 
     /**

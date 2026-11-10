@@ -7,6 +7,7 @@ use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\StockMovementReason;
 use App\Exceptions\OrderNotPlacedException;
+use App\Jobs\SendPurchaseToAdPlatforms;
 use App\Mail\NewOrderAlert;
 use App\Mail\OrderPlaced;
 use App\Models\Coupon;
@@ -17,6 +18,7 @@ use App\Models\OrderItem;
 use App\Models\ProductVariant;
 use App\Models\User;
 use App\Services\CartService;
+use App\Services\ConversionEvents;
 use App\Services\Payments\PaymentGateways;
 use App\Services\Settings;
 use App\Support\CartLine;
@@ -37,6 +39,7 @@ class PlaceOrder
         private readonly AdjustStock $adjustStock,
         private readonly PaymentGateways $paymentGateways,
         private readonly Settings $settings,
+        private readonly ConversionEvents $conversionEvents,
     ) {}
 
     /**
@@ -104,6 +107,10 @@ class PlaceOrder
         });
 
         $this->sendEmails($order, alertTheTeam: $placedBy === null);
+
+        if ($order->ad_tracking_allowed && $this->conversionEvents->isConfigured()) {
+            SendPurchaseToAdPlatforms::dispatch($order)->afterCommit();
+        }
 
         return $order;
     }
@@ -230,6 +237,9 @@ class PlaceOrder
             'ip_address' => $details->ipAddress,
             'user_agent' => $details->userAgent,
             'placed_at' => $placedAt,
+            ...($details->attribution?->orderAttributes() ?? []),
+            'ad_tracking_allowed' => $details->adTrackingAllowed,
+            'tracking_ids' => $details->trackingIds === [] ? null : $details->trackingIds,
         ]);
 
         $order->number = Order::numberFor($order->id);

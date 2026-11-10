@@ -31,7 +31,9 @@
     $isStopped = in_array($order->status, [OrderStatus::Cancelled, OrderStatus::Returned], true);
 @endphp
 
-<x-store.layout :title="$fromAccount ? __('Order :number', ['number' => $order->number]) : __('Thank you for your order')">
+<x-store.layout :title="$fromAccount ? __('Order :number', ['number' => $order->number]) : __('Thank you for your order')" :whats-app-button="false">
+    <x-store.track-event :event="$trackingEvent ?? null" />
+
     <div class="page-container py-8">
         <div x-data="orderPlaced" class="mx-auto max-w-3xl">
             @if ($fromAccount)

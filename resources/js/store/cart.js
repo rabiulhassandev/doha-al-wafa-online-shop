@@ -76,8 +76,14 @@ export default () => ({
                 return { ok: false, message: await firstErrorMessage(response) };
             }
 
-            this.apply(await response.json());
+            const data = await response.json();
+            this.apply(data);
             this.open = true;
+
+            // Ad pixels hear about it through resources/js/store/tracking.js.
+            if (data.tracking) {
+                window.dispatchEvent(new CustomEvent('store:track', { detail: data.tracking }));
+            }
 
             return { ok: true };
         } catch {

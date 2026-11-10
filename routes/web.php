@@ -24,21 +24,32 @@ use App\Http\Controllers\Storefront\OrderConfirmationController;
 use App\Http\Controllers\Storefront\PageController;
 use App\Http\Controllers\Storefront\ProductCardController;
 use App\Http\Controllers\Storefront\ProductController;
+use App\Http\Controllers\Storefront\ProductFeedController;
 use App\Http\Controllers\Storefront\SearchController;
 use App\Http\Controllers\Storefront\SearchSuggestionController;
 use App\Http\Controllers\Storefront\ShopController;
+use App\Http\Controllers\Storefront\ShortLinkController;
 use App\Http\Controllers\Storefront\SubscriberController;
 use App\Http\Controllers\Storefront\TrackOrderController;
 use App\Http\Controllers\Storefront\WishlistController;
 use App\Http\Middleware\ApplyCouponFromLink;
+use App\Http\Middleware\CaptureAttribution;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', LocaleRedirectController::class)->name('locale.redirect');
 
+Route::get('p/{code}', ShortLinkController::class)
+    ->middleware('throttle:120,1')
+    ->where('code', '[A-Za-z0-9-]+')
+    ->name('short-links.redirect');
+Route::get('feeds/{platform}.csv', ProductFeedController::class)
+    ->middleware('throttle:30,1')
+    ->name('feeds.show');
+
 Route::prefix('{locale}')
     ->where(['locale' => implode('|', array_keys(config('shop.locales')))])
-    ->middleware([SetLocale::class, ApplyCouponFromLink::class])
+    ->middleware([SetLocale::class, ApplyCouponFromLink::class, CaptureAttribution::class])
     ->group(function (): void {
         Route::get('/', HomeController::class)->name('home');
 

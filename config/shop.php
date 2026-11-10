@@ -78,6 +78,19 @@ return [
         'whatsapp_message_on_the_way_ar' => null,
         'whatsapp_message_missed_delivery_en' => null,
         'whatsapp_message_missed_delivery_ar' => null,
+        // Floating WhatsApp button on store pages, when a WhatsApp number is set.
+        'whatsapp_button_enabled' => true,
+        // Ad tracking. Access tokens are saved encrypted.
+        'meta_pixel_id' => null,
+        'meta_capi_token' => null,
+        'meta_test_event_code' => null,
+        'tiktok_pixel_id' => null,
+        'tiktok_events_token' => null,
+        'tiktok_test_event_code' => null,
+        'snap_pixel_id' => null,
+        'ga4_measurement_id' => null,
+        // When set, catalog feeds need "?token=…".
+        'feed_token' => null,
     ],
 
     /*

@@ -15,6 +15,7 @@ use App\Models\User;
 use App\Services\CartService;
 use App\Services\Payments\PaymentGateways;
 use App\Services\Settings;
+use App\Services\Tracking;
 use App\Support\CartLine;
 use App\Support\CartSummary;
 use App\Support\Money;
@@ -29,6 +30,11 @@ use Illuminate\Support\Str;
 
 class CheckoutController extends Controller
 {
+    /**
+     * The order number placed in the previous request, flashed for the thank-you page.
+     */
+    public const JUST_PLACED_SESSION_KEY = 'order_just_placed';
+
     public function __construct(
         private readonly CartService $cartService,
         private readonly Settings $settings,
@@ -39,7 +45,7 @@ class CheckoutController extends Controller
      *
      * Opening checkout from the bag ("?from=bag") drops any earlier "Order now" item.
      */
-    public function show(Request $request, PaymentGateways $paymentGateways): View|RedirectResponse
+    public function show(Request $request, PaymentGateways $paymentGateways, Tracking $tracking): View|RedirectResponse
     {
         if ($request->query('from') === 'bag') {
             $request->session()->forget(BuyNowController::SESSION_KEY);
@@ -62,6 +68,7 @@ class CheckoutController extends Controller
             'preferredDateEnabled' => (bool) $this->settings->get('preferred_date_enabled'),
             'checkoutToken' => (string) Str::uuid(),
             'account' => $this->accountPrefill($request->user()),
+            'trackingEvent' => $tracking->isEnabled() ? $tracking->initiateCheckout($summary) : null,
         ]);
     }
 
@@ -105,6 +112,9 @@ class CheckoutController extends Controller
         if ($request->user() !== null && $request->boolean('save_address')) {
             $this->rememberAddress($request->user(), $order, $saveAddress);
         }
+
+        // The thank-you page sends the purchase to the ad pixels once, on this first visit.
+        $request->session()->flash(self::JUST_PLACED_SESSION_KEY, $order->number);
 
         $payment = $order->payments()->latest('id')->firstOrFail();
 

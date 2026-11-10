@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Models\Setting;
 use App\Support\QatarPhone;
 use Illuminate\Contracts\Cache\Repository as Cache;
+use Illuminate\Contracts\Encryption\DecryptException;
+use Illuminate\Support\Facades\Crypt;
 
 class Settings
 {
@@ -33,6 +35,32 @@ class Settings
     public function phone(string $key): ?QatarPhone
     {
         return QatarPhone::tryParse($this->get($key));
+    }
+
+    /**
+     * Get a setting saved encrypted, such as an ad platform's access token.
+     */
+    public function secret(string $key): ?string
+    {
+        $value = $this->get($key);
+
+        if (! is_string($value) || $value === '') {
+            return null;
+        }
+
+        try {
+            return Crypt::decryptString($value);
+        } catch (DecryptException) {
+            return null;
+        }
+    }
+
+    /**
+     * Encrypt a value for saving as a secret setting.
+     */
+    public static function encryptSecret(string $value): string
+    {
+        return Crypt::encryptString($value);
     }
 
     /**

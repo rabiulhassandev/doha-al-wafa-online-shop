@@ -30,6 +30,14 @@
                 <div class="sm:col-span-2">
                     <x-admin.input name="contact_email" type="email" label="Contact email" :value="$settings['contact_email']" />
                 </div>
+                <div class="sm:col-span-2">
+                    <x-admin.toggle
+                        name="whatsapp_button_enabled"
+                        label="Show a WhatsApp button on every store page"
+                        :checked="(bool) $settings['whatsapp_button_enabled']"
+                        hint="A round button in the corner that opens a chat with the WhatsApp number above."
+                    />
+                </div>
             </div>
         </x-admin.card>
 
@@ -141,6 +149,74 @@
                 :checked="(bool) $settings['consent_bar_enabled']"
                 hint="Shows a small bar where visitors accept or refuse ad cookies. Turn it on before adding Meta, TikTok or Snapchat tracking: those load only for visitors who accept."
             />
+        </x-admin.card>
+
+        <x-admin.card id="tracking" title="Ads and analytics" description="Paste the IDs from each platform to measure visits, adds to bag and orders. Leave a field empty to turn that platform off. With the consent bar on, they load only for visitors who accept.">
+            <div class="space-y-8">
+                <fieldset class="grid gap-5 sm:grid-cols-2">
+                    <legend class="mb-4 text-sm font-semibold">Meta (Facebook and Instagram)</legend>
+                    <x-admin.input name="meta_pixel_id" label="Pixel ID" :value="$settings['meta_pixel_id']" inputmode="numeric" placeholder="1234567890123456" hint="Events Manager → your data source → Settings." />
+                    <x-admin.input name="meta_test_event_code" label="Test code (optional)" :value="$settings['meta_test_event_code']" placeholder="TEST12345" hint="Only while checking orders in Test events. Clear it afterwards." />
+                    <div class="space-y-2 sm:col-span-2">
+                        <x-admin.input
+                            name="meta_capi_token"
+                            type="password"
+                            label="Conversions API token (optional)"
+                            autocomplete="new-password"
+                            :hint="$secretsSaved['meta_capi_token'] ? 'A token is saved. Leave this empty to keep it.' : 'Sends each order from the server too, so ad blockers and in-app browsers don’t hide sales. Settings → Conversions API → Generate access token.'"
+                        />
+                        @if ($secretsSaved['meta_capi_token'])
+                            <x-admin.checkbox name="meta_capi_token_clear" label="Remove the saved token" />
+                        @endif
+                    </div>
+                </fieldset>
+
+                <fieldset class="grid gap-5 sm:grid-cols-2">
+                    <legend class="mb-4 text-sm font-semibold">TikTok</legend>
+                    <x-admin.input name="tiktok_pixel_id" label="Pixel ID" :value="$settings['tiktok_pixel_id']" placeholder="C1A2B3C4D5E6F7G8H9I0" hint="Ads Manager → Tools → Events → Web events." />
+                    <x-admin.input name="tiktok_test_event_code" label="Test code (optional)" :value="$settings['tiktok_test_event_code']" placeholder="TEST12345" hint="Only while testing. Clear it afterwards." />
+                    <div class="space-y-2 sm:col-span-2">
+                        <x-admin.input
+                            name="tiktok_events_token"
+                            type="password"
+                            label="Events API access token (optional)"
+                            autocomplete="new-password"
+                            :hint="$secretsSaved['tiktok_events_token'] ? 'A token is saved. Leave this empty to keep it.' : 'Sends each order from the server too. Your pixel → Settings → Events API → Generate access token.'"
+                        />
+                        @if ($secretsSaved['tiktok_events_token'])
+                            <x-admin.checkbox name="tiktok_events_token_clear" label="Remove the saved token" />
+                        @endif
+                    </div>
+                </fieldset>
+
+                <fieldset class="grid gap-5 sm:grid-cols-2">
+                    <legend class="mb-4 text-sm font-semibold">Snapchat and Google</legend>
+                    <x-admin.input name="snap_pixel_id" label="Snap pixel ID" :value="$settings['snap_pixel_id']" placeholder="1a2b3c4d-1a2b-1a2b-1a2b-1a2b3c4d5e6f" hint="Snapchat Ads Manager → Events Manager." />
+                    <x-admin.input name="ga4_measurement_id" label="Google Analytics measurement ID" :value="$settings['ga4_measurement_id']" placeholder="G-AB12CD34EF" hint="Admin → Data streams → your website." />
+                </fieldset>
+            </div>
+        </x-admin.card>
+
+        <x-admin.card id="feeds" title="Catalog feeds" description="Product lists for Meta Commerce Manager and TikTok Catalog, for shop tabs and catalog ads. Add a feed as a scheduled data feed with the address below; the platforms fetch it every day. Every color and size is its own item.">
+            <div class="space-y-5">
+                <div class="max-w-md">
+                    <x-admin.input
+                        name="feed_token"
+                        label="Feed password (optional)"
+                        :value="$settings['feed_token']"
+                        maxlength="64"
+                        hint="Adds ?token=… to the addresses so only the platforms can read your feeds. 8 or more letters and digits. Save, then copy the addresses again."
+                    />
+                </div>
+                <dl class="grid gap-3 text-sm">
+                    @foreach ($feedUrls as $feedLabel => $feedUrl)
+                        <div class="rounded-lg bg-sand-50 px-3 py-2">
+                            <dt class="text-xs text-ink-500">{{ $feedLabel }}</dt>
+                            <dd class="font-mono break-all select-all">{{ $feedUrl }}</dd>
+                        </div>
+                    @endforeach
+                </dl>
+            </div>
         </x-admin.card>
 
         <x-admin.card title="Inventory">

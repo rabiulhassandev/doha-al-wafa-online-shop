@@ -14,6 +14,7 @@ class OrderExportController extends Controller
     private const COLUMNS = [
         'Order', 'Placed', 'Status', 'Payment', 'Channel', 'Customer', 'Phone', 'Email',
         'Area', 'Address', 'Pieces', 'Subtotal (QAR)', 'Delivery (QAR)', 'Discount (QAR)', 'Coupon', 'Total (QAR)',
+        'Source', 'Campaign',
     ];
 
     /**
@@ -48,6 +49,8 @@ class OrderExportController extends Controller
                     Money::toInput($order->discount_total),
                     $order->coupon_code,
                     Money::toInput($order->grand_total),
+                    $order->sourceLabel(),
+                    $order->utm_campaign,
                 ], escape: '');
             }
 

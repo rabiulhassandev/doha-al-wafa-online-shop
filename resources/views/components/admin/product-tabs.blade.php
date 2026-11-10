@@ -19,6 +19,15 @@
                 <x-admin.badge :color="$product->status->badgeColor()">{{ $product->status->label() }}</x-admin.badge>
             </p>
         </div>
+
+        <x-admin.button
+            :href="route('admin.short-links.create', ['label' => $product->name_en, 'destination' => route('products.show', ['locale' => 'ar', 'product' => $product], false)])"
+            variant="secondary"
+            size="sm"
+        >
+            <x-icon name="link" class="size-4" />
+            Make a short link
+        </x-admin.button>
     </div>
 
     <nav class="-mx-4 overflow-x-auto border-b border-sand-200 px-4 sm:mx-0 sm:px-0" aria-label="Product sections">

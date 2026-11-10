@@ -12,6 +12,7 @@ use App\Models\ProductVariant;
 use App\Models\Size;
 use App\Services\ProductCatalog;
 use App\Services\Settings;
+use App\Services\Tracking;
 use App\Support\DeliveryEstimate;
 use App\Support\Money;
 use Carbon\CarbonImmutable;
@@ -28,7 +29,7 @@ class ProductController extends Controller
      *
      * Team members can preview products that are not active yet.
      */
-    public function show(Request $request, Product $product, ProductCatalog $catalog): View
+    public function show(Request $request, Product $product, ProductCatalog $catalog, Tracking $tracking): View
     {
         $product->load([
             'category.parent',
@@ -52,17 +53,22 @@ class ProductController extends Controller
             ? $requestedSize
             : null;
 
+        $priceRange = $product->priceRange();
+
         return view('storefront.products.show', [
             'product' => $product,
             'colors' => $colors,
             'sizes' => $sizes,
             'selectedColor' => $selectedColor,
             'isPreview' => $isPreview,
-            'priceRange' => $product->priceRange(),
+            'priceRange' => $priceRange,
             'pageData' => $this->pageData($product, $colors, $sizes, $selectedColor, $selectedSizeSlug, (int) $this->settings->get('low_stock_threshold')),
             'related' => $catalog->related($product),
             'deliveryWindow' => $this->deliveryWindow(),
             'breadcrumbs' => $this->breadcrumbs($product),
+            'trackingEvent' => $tracking->isEnabled()
+                ? $tracking->viewContent((string) $product->translated('name'), $selectedColor->offeredVariants(), $priceRange[0])
+                : null,
         ]);
     }
 

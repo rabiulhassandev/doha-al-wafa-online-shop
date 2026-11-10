@@ -29,6 +29,7 @@ use App\Http\Controllers\Admin\ProductImagePositionController;
 use App\Http\Controllers\Admin\ProductStockController;
 use App\Http\Controllers\Admin\ProductVariantController;
 use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\ShortLinkController;
 use App\Http\Controllers\Admin\SizeController;
 use App\Http\Controllers\Admin\SizeGuideController;
 use App\Http\Controllers\Admin\StaffController;
@@ -119,6 +120,7 @@ Route::middleware(['auth', 'can:access-admin'])->group(function (): void {
         Route::resource('size-guides', SizeGuideController::class)->except('show');
 
         Route::resource('banners', BannerController::class)->except('show');
+        Route::resource('short-links', ShortLinkController::class)->except('show');
     });
 
     Route::middleware('can:manage-store')->group(function (): void {

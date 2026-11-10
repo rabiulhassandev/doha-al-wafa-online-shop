@@ -6,6 +6,7 @@ import productCards from './store/product-cards';
 import productListing from './store/product-listing';
 import productPage from './store/product-page';
 import searchBox from './store/search-box';
+import startTracking from './store/tracking';
 import wishlist from './store/wishlist';
 
 Alpine.store('wishlist', wishlist());
@@ -40,3 +41,4 @@ Alpine.data('searchBox', searchBox);
 window.Alpine = Alpine;
 
 Alpine.start();
+startTracking();

@@ -247,6 +247,48 @@
                 @endif
             </x-admin.card>
 
+            @if ($order->sourceLabel() !== null || $order->shortLink !== null || $order->landing_url !== null)
+                <x-admin.card title="Came from" description="The last ad, post or link the customer opened before ordering.">
+                    <dl class="space-y-1.5 text-sm">
+                        @foreach ([
+                            'Source' => $order->sourceLabel(),
+                            'Campaign' => $order->utm_campaign,
+                            'Content' => $order->utm_content,
+                            'Keyword' => $order->utm_term,
+                        ] as $sourceDetail => $sourceValue)
+                            @if (filled($sourceValue))
+                                <div class="flex justify-between gap-4">
+                                    <dt class="text-ink-700">{{ $sourceDetail }}</dt>
+                                    <dd class="min-w-0 text-end break-words">{{ $sourceValue }}</dd>
+                                </div>
+                            @endif
+                        @endforeach
+                        @if ($order->shortLink)
+                            <div class="flex justify-between gap-4">
+                                <dt class="text-ink-700">Short link</dt>
+                                <dd class="min-w-0 text-end">
+                                    @can('manage-catalog')
+                                        <a href="{{ route('admin.short-links.edit', $order->shortLink) }}" class="underline underline-offset-2">{{ $order->shortLink->label }}</a>
+                                    @else
+                                        {{ $order->shortLink->label }}
+                                    @endcan
+                                </dd>
+                            </div>
+                        @endif
+                        @if ($order->landing_url)
+                            <div class="flex justify-between gap-4">
+                                <dt class="text-ink-700">First page</dt>
+                                <dd class="min-w-0 truncate text-end" title="{{ $order->landing_url }}">{{ parse_url($order->landing_url, PHP_URL_PATH) ?: '/' }}</dd>
+                            </div>
+                        @endif
+                        <div class="flex justify-between gap-4 text-ink-500">
+                            <dt>Ad tracking</dt>
+                            <dd>{{ $order->ad_tracking_allowed ? 'Allowed' : 'Not allowed' }}</dd>
+                        </div>
+                    </dl>
+                </x-admin.card>
+            @endif
+
             <x-admin.card title="Team note" description="Only the team sees this.">
                 <form method="POST" action="{{ route('admin.orders.note.update', $order) }}" class="space-y-3">
                     @csrf

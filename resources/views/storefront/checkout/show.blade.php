@@ -43,7 +43,9 @@
     ];
 @endphp
 
-<x-store.layout :title="__('Checkout')">
+<x-store.layout :title="__('Checkout')" :whats-app-button="false">
+    <x-store.track-event :event="$trackingEvent" />
+
     <div class="page-container py-6">
         <h1 class="font-display text-3xl sm:text-4xl">{{ __('Checkout') }}</h1>
 

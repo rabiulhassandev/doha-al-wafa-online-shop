@@ -7,6 +7,7 @@ use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\ProductVariant;
 use App\Services\CartService;
+use App\Services\Tracking;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -23,7 +24,7 @@ class CartItemController extends Controller
     /**
      * Add a color and size to the bag.
      */
-    public function store(Request $request, CartService $cartService): JsonResponse|RedirectResponse
+    public function store(Request $request, CartService $cartService, Tracking $tracking): JsonResponse|RedirectResponse
     {
         $validated = $request->validate([
             'variant_id' => ['required', 'integer'],
@@ -37,13 +38,19 @@ class CartItemController extends Controller
         }
 
         $cart = $cartService->currentOrCreate($request);
+        $quantityBefore = (int) $cart->items()->where('product_variant_id', $variant->id)->value('quantity');
         $result = $cartService->add($cart, $variant, (int) ($validated['quantity'] ?? 1));
 
         $message = $result['limited']
             ? __('Only :count of this size can be ordered, so your bag has :count.', ['count' => $result['quantity']])
             : __('Added to your bag.');
 
-        return $this->respond($request, $cartService, $cart, $message);
+        $quantityAdded = $result['quantity'] - $quantityBefore;
+        $trackingEvent = $tracking->isEnabled() && $quantityAdded > 0
+            ? $tracking->addToCart($variant, $quantityAdded, $variant->effectivePrice())
+            : null;
+
+        return $this->respond($request, $cartService, $cart, $message, $trackingEvent);
     }
 
     /**
@@ -94,8 +101,11 @@ class CartItemController extends Controller
 
     /**
      * Answer the slide-in bag with its new contents, or send form posts to the bag page.
+     * An "add to bag" answer also carries the ad tracking event for the browser to send.
+     *
+     * @param  array<string, mixed>|null  $trackingEvent
      */
-    private function respond(Request $request, CartService $cartService, Cart $cart, string $message): JsonResponse|RedirectResponse
+    private function respond(Request $request, CartService $cartService, Cart $cart, string $message, ?array $trackingEvent = null): JsonResponse|RedirectResponse
     {
         if (! $request->expectsJson()) {
             return to_route('cart.show')->with('status', $message);
@@ -103,10 +113,11 @@ class CartItemController extends Controller
 
         $summary = $cartService->summary($cart, $cartService->deliveryZone($request), $cartService->coupon($request));
 
-        return response()->json([
+        return response()->json(array_filter([
             'message' => $message,
             'count' => $summary->lines->sum('quantity'),
             'drawer' => view('storefront.cart.drawer', ['summary' => $summary, 'message' => $message])->render(),
-        ]);
+            'tracking' => $trackingEvent,
+        ], fn (mixed $value): bool => $value !== null));
     }
 }

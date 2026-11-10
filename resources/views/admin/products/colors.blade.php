@@ -67,6 +67,18 @@
                     @endforeach
                 </div>
 
+                <x-admin.button
+                    :href="route('admin.short-links.create', [
+                        'label' => $product->name_en.' – '.$productColor->nameEn(),
+                        'destination' => route('products.show', ['locale' => 'ar', 'product' => $product, 'color' => $productColor->color->slug], false),
+                    ])"
+                    variant="ghost"
+                    size="sm"
+                >
+                    <x-icon name="link" class="size-4" />
+                    Short link
+                </x-admin.button>
+
                 <x-admin.confirm-button
                     :action="route('admin.products.colors.destroy', [$product, $productColor])"
                     :title="'Remove '.$productColor->nameEn().' from this product?'"

@@ -39,18 +39,27 @@
 
 @push('head')
     <link rel="canonical" href="{{ route('products.show', $product) }}">
-    <meta property="og:type" content="product">
-    <meta property="og:title" content="{{ $name }}">
-    <meta property="og:url" content="{{ route('products.show', ['product' => $product, 'color' => $selectedColor->color->slug]) }}">
-    <meta property="og:image" content="{{ $coverImage->url(1200) }}">
+    {{-- Shared links preview the color that was open, with its own photo. --}}
     <meta property="product:price:amount" content="{{ Money::toInput($lowestPrice) }}">
     <meta property="product:price:currency" content="QAR">
+    <meta property="product:availability" content="{{ $selectedColor->offeredVariants()->contains(fn ($variant): bool => $variant->stock > 0) ? 'in stock' : 'out of stock' }}">
     @if ($isPreview)
         <meta name="robots" content="noindex">
     @endif
 @endpush
 
-<x-store.layout :title="$product->translated('meta_title') ?: $name" :description="$product->translated('meta_description') ?: \Illuminate\Support\Str::limit((string) $product->translated('description'), 155)">
+<x-store.layout
+    :title="$product->translated('meta_title') ?: $name"
+    :description="$product->translated('meta_description') ?: \Illuminate\Support\Str::limit((string) $product->translated('description'), 155)"
+    og-type="product"
+    :og-title="$colors->count() > 1 ? $name.' – '.$selectedColor->displayName() : $name"
+    :og-url="route('products.show', ['product' => $product, 'color' => $selectedColor->color->slug])"
+    :og-image="$coverImage->url(1200)"
+    :og-image-alt="$name.' – '.$selectedColor->displayName()"
+    :whats-app-button="false"
+>
+    <x-store.track-event :event="$trackingEvent" />
+
     <div x-data="productPage(@js($data))" class="pb-28 lg:pb-12">
         @if ($isPreview)
             <p class="bg-gold-300/40 px-4 py-2 text-center text-sm">{{ __('Preview: shoppers cannot see this product until it is set to Active.') }}</p>

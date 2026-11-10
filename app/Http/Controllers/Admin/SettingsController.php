@@ -21,6 +21,11 @@ class SettingsController extends Controller
             'contactPhone' => $settings->phone('contact_phone')?->formatted(),
             'whatsAppNumber' => $settings->phone('whatsapp_number')?->formatted(),
             'deliveryFreeOver' => Money::toInput($settings->get('delivery_free_over')),
+            'secretsSaved' => [
+                'meta_capi_token' => $settings->secret('meta_capi_token') !== null,
+                'tiktok_events_token' => $settings->secret('tiktok_events_token') !== null,
+            ],
+            'feedUrls' => $this->feedUrls($settings),
         ]);
     }
 
@@ -32,5 +37,28 @@ class SettingsController extends Controller
         $settings->set($request->settingValues());
 
         return to_route('admin.settings.edit')->with('status', 'Settings saved.');
+    }
+
+    /**
+     * Get the catalog feed addresses to paste into Meta and TikTok, per language.
+     *
+     * @return array<string, string>
+     */
+    private function feedUrls(Settings $settings): array
+    {
+        $token = $settings->get('feed_token') ?: null;
+        $feedUrls = [];
+
+        foreach (['meta' => 'Meta', 'tiktok' => 'TikTok'] as $platform => $platformName) {
+            foreach (config('shop.locales') as $locale => $language) {
+                $feedUrls["{$platformName}, {$language['label']}"] = route('feeds.show', array_filter([
+                    'platform' => $platform,
+                    'locale' => $locale === config('shop.default_locale') ? null : $locale,
+                    'token' => $token,
+                ]));
+            }
+        }
+
+        return $feedUrls;
     }
 }

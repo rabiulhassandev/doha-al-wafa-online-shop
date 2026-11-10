@@ -7,7 +7,9 @@ use App\Enums\PaymentStatus;
 use App\Models\DeliveryZone;
 use App\Models\Order;
 use App\Models\ProductVariant;
+use App\Models\ShortLink;
 use App\Models\User;
+use App\Support\Attribution;
 use App\Support\QatarPhone;
 use Illuminate\Support\Facades\Mail;
 
@@ -100,6 +102,16 @@ describe('index', function () {
             ->toContain(',210');
     });
 
+    it('exports where each order came from', function () {
+        websiteOrder(['attribution' => new Attribution(utm: ['utm_source' => 'instagram', 'utm_medium' => 'bio', 'utm_campaign' => 'eid-2026'])]);
+
+        $response = $this->actingAs(User::factory()->staff()->create())->get(route('admin.orders.export'));
+
+        expect($response->streamedContent())
+            ->toContain(',Source,Campaign')
+            ->toContain(',"instagram / bio",eid-2026');
+    });
+
     it('keeps customers out', function () {
         $this->actingAs(User::factory()->create())
             ->get(route('admin.orders.index'))
@@ -122,6 +134,31 @@ describe('show', function () {
             ->assertSee('Cancel order')
             ->assertDontSee('Mark delivered')
             ->assertSee('https://wa.me/97455551234?text='.rawurlencode('مرحباً Fatima Al-Kuwari'), false);
+    });
+
+    it('shows where the order came from', function () {
+        $shortLink = ShortLink::factory()->create(['label' => 'Eid video']);
+        $order = websiteOrder([
+            'attribution' => new Attribution(
+                utm: ['utm_source' => 'tiktok', 'utm_medium' => 'paid', 'utm_campaign' => 'eid-2026'],
+                landingUrl: 'http://localhost/ar/products/classic?sl=x',
+                shortLinkId: $shortLink->id,
+            ),
+            'adTrackingAllowed' => true,
+        ]);
+
+        $this->actingAs(User::factory()->staff()->create())
+            ->get(route('admin.orders.show', $order))
+            ->assertOk()
+            ->assertSee('Came from')
+            ->assertSeeInOrder(['Source', 'tiktok / paid', 'Campaign', 'eid-2026', 'Short link', 'Eid video', 'First page', '/ar/products/classic', 'Ad tracking', 'Allowed']);
+    });
+
+    it('leaves the source out when nothing is known', function () {
+        $this->actingAs(User::factory()->staff()->create())
+            ->get(route('admin.orders.show', websiteOrder()))
+            ->assertOk()
+            ->assertDontSee('Came from');
     });
 });
 

@@ -37,5 +37,10 @@ final readonly class CheckoutDetails
         public ?string $couponCode = null,
         // The signed-in shopper's account, so the order shows in "My orders".
         public ?int $userId = null,
+        // Where the shopper came from, and whether they allowed ad tracking.
+        public ?Attribution $attribution = null,
+        public bool $adTrackingAllowed = false,
+        /** @var array<string, string> IDs ad platforms saved in the browser */
+        public array $trackingIds = [],
     ) {}
 }

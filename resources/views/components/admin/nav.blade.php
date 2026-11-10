@@ -68,6 +68,9 @@
             <x-admin.nav-link :href="route('admin.banners.index')" icon="image" :active="request()->routeIs('admin.banners.*')">
                 Home banners
             </x-admin.nav-link>
+            <x-admin.nav-link :href="route('admin.short-links.index')" icon="link" :active="request()->routeIs('admin.short-links.*')">
+                Short links
+            </x-admin.nav-link>
             @can('manage-store')
                 <x-admin.nav-link :href="route('admin.coupons.index')" icon="tag" :active="request()->routeIs('admin.coupons.*')">
                     Discount codes
