@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Storefront;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
-use App\Services\Settings;
 use Illuminate\Contracts\View\View;
 
 /**
@@ -12,15 +11,10 @@ use Illuminate\Contracts\View\View;
  */
 class OrderConfirmationController extends Controller
 {
-    public function __invoke(Order $order, Settings $settings): View
+    public function __invoke(Order $order): View
     {
         $order->load('items');
-        $whatsApp = $settings->phone('whatsapp_number');
-        $message = __('Hello! I just placed order :number. Please confirm it.', ['number' => $order->number]);
 
-        return view('storefront.orders.thank-you', [
-            'order' => $order,
-            'whatsAppUrl' => $whatsApp ? 'https://wa.me/'.$whatsApp->whatsAppNumber().'?text='.rawurlencode($message) : null,
-        ]);
+        return view('storefront.orders.thank-you', ['order' => $order]);
     }
 }

@@ -10,11 +10,15 @@
     use App\Support\Money;
 
     $locale = app()->getLocale();
-    $selectedZoneId = (int) old('delivery_zone_id', $summary->deliveryZone?->id);
+    // A signed-in shopper's first saved address is filled in; its area comes before the one chosen in the bag.
+    $savedAddress = $account['address'] ?? null;
+    $selectedZoneId = (int) old('delivery_zone_id', $savedAddress['delivery_zone_id'] ?? $summary->deliveryZone?->id);
     $selectedZone = $zoneOptions[$selectedZoneId] ?? null;
     $optionalFields = ['email', 'unit', 'landmark', 'latitude', 'longitude', 'preferred_delivery_date', 'note'];
     $moreDetailsOpen = $errors->hasAny($optionalFields)
-        || collect($optionalFields)->contains(fn (string $field): bool => filled(old($field)));
+        || collect($optionalFields)->contains(fn (string $field): bool => filled(old($field)))
+        || filled($savedAddress['unit'] ?? null)
+        || filled($savedAddress['landmark'] ?? null);
     $selectedPaymentMethod = old('payment_method', $paymentMethods[0]->value);
     $discountText = $summary->discount() > 0 ? '−'.Money::format($summary->discount(), $locale) : $summary->coupon?->benefit();
     $fieldClasses = 'mt-1.5 block w-full rounded-xl border border-sand-300 bg-white px-4 text-base focus:border-maroon-700 focus:ring-2 focus:ring-maroon-100 focus:outline-none';
@@ -27,6 +31,7 @@
         // Restore the browser draft unless this page shows the form's own submitted values.
         'restoreDraft' => old('checkout_token') === null,
         'discountText' => $discountText,
+        'addresses' => (object) collect($account['addresses'] ?? [])->map(fn (array $address): array => $address['fields'])->all(),
         'subtotalText' => Money::format($summary->subtotal(), $locale),
         'messages' => [
             'chooseArea' => __('Choose your area'),
@@ -41,6 +46,14 @@
 <x-store.layout :title="__('Checkout')">
     <div class="page-container py-6">
         <h1 class="font-display text-3xl sm:text-4xl">{{ __('Checkout') }}</h1>
+
+        @guest
+            <p class="mt-3 text-sm text-ink-700">
+                {{ __('Have an account?') }}
+                <a href="{{ route('account.login', ['next' => 'checkout']) }}" class="font-medium text-maroon-700 underline underline-offset-4">{{ __('Sign in for faster checkout') }}</a>
+                · {{ __('Or simply order as a guest.') }}
+            </p>
+        @endguest
 
         @if ($isBuyNow)
             <p class="mt-3 text-sm text-ink-700">
@@ -82,9 +95,9 @@
                         {{ __('Your details') }}
                     </h2>
                     <div class="mt-5 grid gap-5">
-                        <x-store.text-field name="name" :label="__('Full name')" autocomplete="name" maxlength="120" required />
+                        <x-store.text-field name="name" :label="__('Full name')" :value="$account['name'] ?? null" autocomplete="name" maxlength="120" required />
 
-                        <x-store.phone-field :label="__('Mobile number')" :hint="__('We will call or WhatsApp you on this number to confirm your order.')" required />
+                        <x-store.phone-field :label="__('Mobile number')" :value="$account['phone'] ?? null" :hint="__('We will call or WhatsApp you on this number to confirm your order.')" required />
                     </div>
                 </section>
 
@@ -94,6 +107,17 @@
                         {{ __('Delivery address') }}
                     </h2>
                     <div class="mt-5 grid gap-5">
+                        @if (count($account['addresses'] ?? []) > 1)
+                            <div>
+                                <label for="saved-address" class="block text-sm font-medium">{{ __('Your saved addresses') }}</label>
+                                <select id="saved-address" x-on:change="useAddress($event.target.value)" class="{{ $fieldClasses }} h-12">
+                                    @foreach ($account['addresses'] as $addressId => $address)
+                                        <option value="{{ $addressId }}" @selected($loop->first)>{{ $address['label'] }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @endif
+
                         <div>
                             <label for="delivery_zone_id" class="block text-sm font-medium">{{ __('Delivery area') }}</label>
                             <select
@@ -120,11 +144,18 @@
                             <legend class="text-sm font-medium">{{ __('Blue plate numbers') }}</legend>
                             <p class="mt-1 text-xs text-ink-500">{{ __('You will find them on the blue plate on your building.') }}</p>
                             <div class="mt-3 grid grid-cols-3 gap-3">
-                                <x-store.text-field name="zone_number" :label="__('Zone')" inputmode="numeric" maxlength="4" autocomplete="off" required />
-                                <x-store.text-field name="street_number" :label="__('Street')" inputmode="numeric" maxlength="4" autocomplete="off" required />
-                                <x-store.text-field name="building_number" :label="__('Building')" inputmode="numeric" maxlength="4" autocomplete="off" required />
+                                <x-store.text-field name="zone_number" :label="__('Zone')" :value="$savedAddress['zone_number'] ?? null" inputmode="numeric" maxlength="4" autocomplete="off" required />
+                                <x-store.text-field name="street_number" :label="__('Street')" :value="$savedAddress['street_number'] ?? null" inputmode="numeric" maxlength="4" autocomplete="off" required />
+                                <x-store.text-field name="building_number" :label="__('Building')" :value="$savedAddress['building_number'] ?? null" inputmode="numeric" maxlength="4" autocomplete="off" required />
                             </div>
                         </fieldset>
+
+                        @auth
+                            <label class="flex items-center gap-2 text-sm">
+                                <input type="checkbox" name="save_address" value="1" @checked(old('save_address', $account['addresses'] === [])) class="size-4 accent-maroon-700">
+                                {{ __('Save this address to my account') }}
+                            </label>
+                        @endauth
                     </div>
                 </section>
 
@@ -138,8 +169,8 @@
                     </summary>
 
                     <div class="grid gap-5 px-5 pb-5 sm:px-6 sm:pb-6">
-                        <x-store.text-field name="unit" :label="__('Villa, apartment or floor')" maxlength="60" autocomplete="address-line2" />
-                        <x-store.text-field name="landmark" :label="__('Landmark or directions')" :hint="__('For example: next to the mosque, white gate.')" maxlength="200" />
+                        <x-store.text-field name="unit" :label="__('Villa, apartment or floor')" :value="$savedAddress['unit'] ?? null" maxlength="60" autocomplete="address-line2" />
+                        <x-store.text-field name="landmark" :label="__('Landmark or directions')" :value="$savedAddress['landmark'] ?? null" :hint="__('For example: next to the mosque, white gate.')" maxlength="200" />
 
                         <div x-cloak>
                             <p class="text-sm font-medium">{{ __('Location pin') }}</p>
@@ -163,7 +194,7 @@
                             @enderror
                         </div>
 
-                        <x-store.text-field name="email" type="email" inputmode="email" autocomplete="email" maxlength="190" :label="__('Email')" :hint="__('We will email you a copy of your order.')" />
+                        <x-store.text-field name="email" type="email" inputmode="email" autocomplete="email" maxlength="190" :label="__('Email')" :value="$account['email'] ?? null" :hint="__('We will email you a copy of your order.')" />
 
                         @if ($preferredDateEnabled)
                             <div>

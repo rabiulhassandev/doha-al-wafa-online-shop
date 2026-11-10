@@ -37,6 +37,11 @@
             <span class="sr-only">{{ __('Search') }}</span>
         </button>
 
+        <a href="{{ auth()->check() ? route('account.orders') : route('account.login') }}" class="hidden size-11 items-center justify-center rounded-full hover:bg-sand-100 sm:inline-flex">
+            <x-icon name="user" class="size-6" />
+            <span class="sr-only">{{ auth()->check() ? __('My account') : __('Sign in') }}</span>
+        </a>
+
         <a href="{{ route('wishlist') }}" class="relative inline-flex size-11 items-center justify-center rounded-full hover:bg-sand-100">
             <x-icon name="heart" class="size-6" />
             <span

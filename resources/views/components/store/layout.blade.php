@@ -52,5 +52,10 @@
 
         <x-store.footer />
         <x-store.consent-bar />
+
+        @if ($accountWishlist)
+            {{-- The wishlist saved on the account; the browser's wishlist merges with it (see store/wishlist.js). --}}
+            <div id="wishlist-account" hidden data-url="{{ $accountWishlist['url'] }}" data-ids="@json($accountWishlist['ids'])"></div>
+        @endif
     </body>
 </html>

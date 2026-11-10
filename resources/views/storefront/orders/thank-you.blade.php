@@ -1,4 +1,9 @@
-{{-- Shown after placing an order, through a signed link. Expects $order with its items, and $whatsAppUrl. --}}
+{{--
+    An order's own page: the thank-you page after placing it (through a signed link), and the order in "My orders".
+    Expects $order with its items; $fromAccount is true when opened from the account.
+--}}
+@inject('settings', 'App\Services\Settings')
+
 @push('head')
     <meta name="robots" content="noindex">
 @endpush
@@ -7,7 +12,12 @@
     use App\Enums\OrderStatus;
     use App\Support\Money;
 
+    $fromAccount ??= false;
     $locale = app()->getLocale();
+    $storeWhatsApp = $settings->phone('whatsapp_number');
+    $whatsAppUrl = $storeWhatsApp
+        ? 'https://wa.me/'.$storeWhatsApp->whatsAppNumber().'?text='.rawurlencode(__('Hello! I just placed order :number. Please confirm it.', ['number' => $order->number]))
+        : null;
     $steps = [
         [OrderStatus::PendingConfirmation, __('Order placed')],
         [OrderStatus::Confirmed, __('Confirmed')],
@@ -21,16 +31,25 @@
     $isStopped = in_array($order->status, [OrderStatus::Cancelled, OrderStatus::Returned], true);
 @endphp
 
-<x-store.layout :title="__('Thank you for your order')">
+<x-store.layout :title="$fromAccount ? __('Order :number', ['number' => $order->number]) : __('Thank you for your order')">
     <div class="page-container py-8">
         <div x-data="orderPlaced" class="mx-auto max-w-3xl">
-            <div class="text-center">
-                <span class="mx-auto flex size-14 items-center justify-center rounded-full bg-success-50 text-success-700">
-                    <x-icon name="check" class="size-7" />
-                </span>
-                <h1 class="mt-4 font-display text-3xl sm:text-4xl">{{ __('Thank you, :name!', ['name' => $order->customer_name]) }}</h1>
-                <p class="mt-2 text-ink-700">{{ __('Your order :number is placed.', ['number' => $order->number]) }}</p>
-            </div>
+            @if ($fromAccount)
+                <a href="{{ route('account.orders') }}" class="inline-flex items-center gap-1 text-sm font-medium text-maroon-700 hover:underline">
+                    <x-icon name="chevron-end" class="size-4 -scale-x-100 rtl:scale-x-100" />
+                    {{ __('My orders') }}
+                </a>
+                <h1 class="mt-3 font-display text-3xl sm:text-4xl">{{ __('Order :number', ['number' => $order->number]) }}</h1>
+                <p class="mt-1 text-ink-700">{{ __('Placed on') }} {{ $order->placed_at->locale($locale)->translatedFormat('j F Y') }}</p>
+            @else
+                <div class="text-center">
+                    <span class="mx-auto flex size-14 items-center justify-center rounded-full bg-success-50 text-success-700">
+                        <x-icon name="check" class="size-7" />
+                    </span>
+                    <h1 class="mt-4 font-display text-3xl sm:text-4xl">{{ __('Thank you, :name!', ['name' => $order->customer_name]) }}</h1>
+                    <p class="mt-2 text-ink-700">{{ __('Your order :number is placed.', ['number' => $order->number]) }}</p>
+                </div>
+            @endif
 
             <section class="mt-6 rounded-2xl bg-white p-5 sm:p-6" aria-labelledby="order-status">
                 <h2 id="order-status" class="text-sm font-semibold">

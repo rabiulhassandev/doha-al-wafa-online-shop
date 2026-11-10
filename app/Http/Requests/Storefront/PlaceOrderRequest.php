@@ -70,6 +70,7 @@ class PlaceOrderRequest extends FormRequest
             'payment_method' => ['required', Rule::enum(PaymentMethod::class)->only(app(PaymentGateways::class)->enabledMethods())],
             'expected_subtotal' => ['required', 'integer', 'min:0'],
             'checkout_token' => ['required', 'uuid'],
+            'save_address' => ['boolean'],
             // Hidden from people; bots that fill every field are turned away.
             'website' => ['prohibited'],
         ];
@@ -160,6 +161,7 @@ class PlaceOrderRequest extends FormRequest
             ipAddress: $this->ip(),
             userAgent: Str::limit((string) $this->userAgent(), 250, ''),
             couponCode: $this->session()->get(CartService::COUPON_SESSION_KEY),
+            userId: $this->user()?->id,
         );
     }
 

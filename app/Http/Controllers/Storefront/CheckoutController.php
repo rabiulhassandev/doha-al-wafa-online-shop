@@ -3,18 +3,22 @@
 namespace App\Http\Controllers\Storefront;
 
 use App\Actions\PlaceOrder;
+use App\Actions\SaveAddress;
 use App\Exceptions\OrderNotPlacedException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Storefront\PlaceOrderRequest;
+use App\Models\Address;
 use App\Models\DeliveryZone;
 use App\Models\Order;
 use App\Models\ProductVariant;
+use App\Models\User;
 use App\Services\CartService;
 use App\Services\Payments\PaymentGateways;
 use App\Services\Settings;
 use App\Support\CartLine;
 use App\Support\CartSummary;
 use App\Support\Money;
+use App\Support\QatarPhone;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
@@ -57,13 +61,14 @@ class CheckoutController extends Controller
             'paymentMethods' => $paymentGateways->enabledMethods(),
             'preferredDateEnabled' => (bool) $this->settings->get('preferred_date_enabled'),
             'checkoutToken' => (string) Str::uuid(),
+            'account' => $this->accountPrefill($request->user()),
         ]);
     }
 
     /**
      * Place the order and show the thank-you page, or the gateway's payment page for online payments.
      */
-    public function store(PlaceOrderRequest $request, PlaceOrder $placeOrder, PaymentGateways $paymentGateways): RedirectResponse
+    public function store(PlaceOrderRequest $request, PlaceOrder $placeOrder, PaymentGateways $paymentGateways, SaveAddress $saveAddress): RedirectResponse
     {
         $checkoutToken = $request->validated('checkout_token');
         $alreadyPlaced = Order::query()->firstWhere('checkout_token', $checkoutToken);
@@ -96,6 +101,10 @@ class CheckoutController extends Controller
         $this->forgetOrderedItems($request, $buyNowVariant, array_keys($quantities));
         $request->session()->put(CartService::DELIVERY_ZONE_SESSION_KEY, $order->delivery_zone_id);
         $request->session()->forget(CartService::COUPON_SESSION_KEY);
+
+        if ($request->user() !== null && $request->boolean('save_address')) {
+            $this->rememberAddress($request->user(), $order, $saveAddress);
+        }
 
         $payment = $order->payments()->latest('id')->firstOrFail();
 
@@ -150,6 +159,50 @@ class CheckoutController extends Controller
         }
 
         $this->cartService->current($request)?->items()->whereIn('product_variant_id', $variantIds)->delete();
+    }
+
+    /**
+     * Get what checkout fills in for a signed-in shopper: their details and saved addresses, the first one used first.
+     *
+     * @return array{name: string, email: string, phone: string|null, addresses: array<int, array{label: string, fields: array<string, string>}>, address: array<string, string>|null}|null
+     */
+    private function accountPrefill(?User $user): ?array
+    {
+        if ($user === null) {
+            return null;
+        }
+
+        $addresses = $user->addresses()->with('deliveryZone')->get();
+
+        return [
+            'name' => $user->name,
+            'email' => $user->email,
+            'phone' => QatarPhone::tryParse($user->phone)?->formatted(),
+            'addresses' => $addresses->mapWithKeys(fn (Address $address): array => [$address->id => [
+                'label' => collect([$address->label, $address->deliveryZone?->translated('name'), $address->plateAddress()])->filter()->implode(' · '),
+                'fields' => $address->checkoutFields(),
+            ]])->all(),
+            'address' => $addresses->first()?->checkoutFields(),
+        ];
+    }
+
+    /**
+     * Save the order's address on the account, unless the same address is already saved.
+     */
+    private function rememberAddress(User $user, Order $order, SaveAddress $saveAddress): void
+    {
+        $attributes = [
+            'delivery_zone_id' => $order->delivery_zone_id,
+            'zone_number' => $order->zone_number,
+            'street_number' => $order->street_number,
+            'building_number' => $order->building_number,
+        ];
+
+        if ($user->addresses()->where($attributes)->exists()) {
+            return;
+        }
+
+        $saveAddress->handle($user, [...$attributes, 'unit' => $order->unit, 'landmark' => $order->landmark]);
     }
 
     /**

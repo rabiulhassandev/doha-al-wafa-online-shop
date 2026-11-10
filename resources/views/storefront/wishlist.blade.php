@@ -6,7 +6,7 @@
     <div class="page-container py-6">
         <x-store.breadcrumbs :items="[[__('Home'), route('home')], [__('Wishlist'), null]]" />
         <h1 class="mt-4 font-display text-3xl sm:text-4xl">{{ __('Wishlist') }}</h1>
-        <p class="mt-2 text-sm text-ink-500">{{ __('Saved on this device. Tap the heart on any product to add it.') }}</p>
+        <p class="mt-2 text-sm text-ink-500">{{ auth()->check() ? __('Saved to your account, on every device. Tap the heart on any product to add it.') : __('Saved on this device. Tap the heart on any product to add it.') }}</p>
 
         <div x-data="productCards({ url: @js(route('product-cards')), source: 'wishlist', limit: 24 })" class="mt-8">
             <p x-show="loading" class="text-sm text-ink-500">{{ __('Loading…') }}</p>

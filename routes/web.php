@@ -1,5 +1,14 @@
 <?php
 
+use App\Http\Controllers\Storefront\Account\AccountOrderController;
+use App\Http\Controllers\Storefront\Account\AddressController;
+use App\Http\Controllers\Storefront\Account\AuthenticatedSessionController;
+use App\Http\Controllers\Storefront\Account\NewPasswordController;
+use App\Http\Controllers\Storefront\Account\PasswordController;
+use App\Http\Controllers\Storefront\Account\PasswordResetLinkController;
+use App\Http\Controllers\Storefront\Account\ProfileController;
+use App\Http\Controllers\Storefront\Account\RegisteredUserController;
+use App\Http\Controllers\Storefront\Account\WishlistSyncController;
 use App\Http\Controllers\Storefront\BuyNowController;
 use App\Http\Controllers\Storefront\CartController;
 use App\Http\Controllers\Storefront\CartCouponController;
@@ -61,6 +70,33 @@ Route::prefix('{locale}')
         Route::post('subscribe', [SubscriberController::class, 'store'])
             ->middleware('throttle:10,1')
             ->name('subscribers.store');
+        Route::prefix('account')->name('account.')->group(function (): void {
+            Route::middleware('guest')->group(function (): void {
+                Route::get('register', [RegisteredUserController::class, 'create'])->name('register');
+                Route::post('register', [RegisteredUserController::class, 'store'])->middleware('throttle:5,10')->name('register.store');
+                Route::get('login', [AuthenticatedSessionController::class, 'create'])->name('login');
+                Route::post('login', [AuthenticatedSessionController::class, 'store'])->name('login.store');
+                Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])->name('password.request');
+                Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])->middleware('throttle:5,10')->name('password.email');
+                Route::get('reset-password/{token}', [NewPasswordController::class, 'create'])->name('password.reset');
+                Route::post('reset-password', [NewPasswordController::class, 'store'])->middleware('throttle:10,10')->name('password.store');
+            });
+
+            Route::middleware('auth')->group(function (): void {
+                Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
+                Route::get('/', [AccountOrderController::class, 'index'])->name('orders');
+                Route::get('orders/{order:number}', [AccountOrderController::class, 'show'])->name('orders.show');
+                Route::get('profile', [ProfileController::class, 'edit'])->name('profile.edit');
+                Route::put('profile', [ProfileController::class, 'update'])->name('profile.update');
+                Route::put('password', [PasswordController::class, 'update'])->name('password.update');
+                Route::get('addresses', [AddressController::class, 'index'])->name('addresses.index');
+                Route::post('addresses', [AddressController::class, 'store'])->name('addresses.store');
+                Route::put('addresses/{address}', [AddressController::class, 'update'])->name('addresses.update');
+                Route::delete('addresses/{address}', [AddressController::class, 'destroy'])->name('addresses.destroy');
+                Route::put('wishlist', WishlistSyncController::class)->middleware('throttle:60,1')->name('wishlist.sync');
+            });
+        });
+
         Route::get('track', [TrackOrderController::class, 'show'])->name('track.show');
         Route::post('track', [TrackOrderController::class, 'lookup'])
             ->middleware('throttle:10,1')

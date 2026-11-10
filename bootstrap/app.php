@@ -26,8 +26,18 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // Set in the browser by the cookie bar, so it is not encrypted.
         $middleware->encryptCookies(except: ['tracking_consent']);
-        $middleware->redirectGuestsTo(fn (): string => route('admin.login'));
-        $middleware->redirectUsersTo(fn (): string => route('admin.dashboard'));
+        // The admin panel and the store each have their own sign-in page, in the store's case per language.
+        $storeLocale = function (Request $request): string {
+            $locale = (string) $request->segment(1);
+
+            return array_key_exists($locale, config('shop.locales')) ? $locale : config('shop.default_locale');
+        };
+        $middleware->redirectGuestsTo(fn (Request $request): string => $request->is('admin', 'admin/*')
+            ? route('admin.login')
+            : route('account.login', ['locale' => $storeLocale($request)]));
+        $middleware->redirectUsersTo(fn (Request $request): string => $request->is('admin', 'admin/*')
+            ? route('admin.dashboard')
+            : route('account.orders', ['locale' => $storeLocale($request)]));
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

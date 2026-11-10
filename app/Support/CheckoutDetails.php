@@ -35,5 +35,7 @@ final readonly class CheckoutDetails
         // Dirhams. Set by the team on orders entered by hand; null charges the area's usual fee.
         public ?int $deliveryFee = null,
         public ?string $couponCode = null,
+        // The signed-in shopper's account, so the order shows in "My orders".
+        public ?int $userId = null,
     ) {}
 }

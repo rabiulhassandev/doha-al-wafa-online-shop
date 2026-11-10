@@ -5,13 +5,16 @@ namespace App\Providers;
 use App\Models\User;
 use App\Services\Settings;
 use App\Support\QatarPhone;
+use App\View\Composers\AccountWishlistComposer;
 use App\View\Composers\AdminNavigationComposer;
 use App\View\Composers\CartCountComposer;
 use App\View\Composers\StoreNavigationComposer;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
@@ -49,6 +52,15 @@ class AppServiceProvider extends ServiceProvider
 
         $this->configureOrderRateLimits();
 
+        // Password reset emails link to the store's own page, in the language the customer last used.
+        ResetPassword::toMailUsing(fn (User $user, string $token): MailMessage => (new MailMessage)
+            ->subject(__('Choose a new password'))
+            ->view('mail.reset-password', [
+                'user' => $user,
+                'url' => route('account.password.reset', ['locale' => $user->preferredLocale(), 'token' => $token, 'email' => $user->email]),
+                'minutes' => config('auth.passwords.users.expire'),
+            ]));
+
         // Admin team routes only resolve team members, so customer accounts return 404.
         Route::bind('staff', fn (string $value): User => User::query()->staff()->findOrFail($value));
 
@@ -58,6 +70,7 @@ class AppServiceProvider extends ServiceProvider
         );
         View::composer(['components.store.header', 'components.store.cart-drawer'], CartCountComposer::class);
         View::composer('components.admin.nav', AdminNavigationComposer::class);
+        View::composer('components.store.layout', AccountWishlistComposer::class);
     }
 
     /**

@@ -1,4 +1,4 @@
-@props(['name' => 'phone', 'label', 'hint' => null])
+@props(['name' => 'phone', 'label', 'hint' => null, 'value' => null])
 
 {{-- A Qatar mobile number input with a fixed +974 prefix, its hint and error message. Other attributes go on the input. --}}
 @php
@@ -21,7 +21,7 @@
             inputmode="tel"
             autocomplete="tel-national"
             placeholder="5555 1234"
-            value="{{ old($name) }}"
+            value="{{ old($name, $value) }}"
             @if ($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
             @if ($hasError) aria-invalid="true" @endif
             {{ $attributes->merge(['maxlength' => '20', 'class' => 'w-full min-w-0 bg-transparent px-4 text-base focus:outline-none']) }}

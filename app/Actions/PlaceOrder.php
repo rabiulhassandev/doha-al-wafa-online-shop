@@ -195,6 +195,7 @@ class PlaceOrder
         $appliedCoupon = $summary->couponProblem === null ? $summary->coupon : null;
 
         $order = $customer->orders()->create([
+            'user_id' => $details->userId,
             'checkout_token' => $details->checkoutToken,
             'channel' => $details->channel,
             'status' => $placedBy === null ? OrderStatus::PendingConfirmation : OrderStatus::Confirmed,

@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\URL;
  * order when it is placed, and each line keeps a copy of what was sold.
  */
 #[Fillable([
-    'checkout_token', 'channel', 'status', 'payment_method', 'payment_status', 'currency',
+    'user_id', 'checkout_token', 'channel', 'status', 'payment_method', 'payment_status', 'currency',
     'subtotal', 'discount_total', 'coupon_id', 'coupon_code', 'delivery_fee', 'tax_total', 'grand_total',
     'customer_name', 'customer_phone', 'customer_email',
     'delivery_zone_id', 'delivery_zone_name_en', 'delivery_zone_name_ar',
@@ -101,6 +101,16 @@ class Order extends Model
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    /**
+     * Get the account the order was placed from, when the shopper was signed in.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     /**

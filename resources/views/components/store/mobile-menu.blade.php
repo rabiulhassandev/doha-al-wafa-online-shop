@@ -81,6 +81,14 @@
                 <x-icon name="heart" class="size-5" />
                 {{ __('Wishlist') }}
             </a>
+            <a href="{{ auth()->check() ? route('account.orders') : route('account.login') }}" class="flex h-11 items-center gap-3 rounded-xl px-3 text-sm hover:bg-sand-100">
+                <x-icon name="user" class="size-5" />
+                {{ auth()->check() ? __('My account') : __('Sign in') }}
+            </a>
+            <a href="{{ route('track.show') }}" class="flex h-11 items-center gap-3 rounded-xl px-3 text-sm hover:bg-sand-100">
+                <x-icon name="truck" class="size-5" />
+                {{ __('Track your order') }}
+            </a>
         </nav>
 
         <div class="border-t border-sand-200 p-4">

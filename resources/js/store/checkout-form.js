@@ -96,6 +96,35 @@ export default (data) => ({
         }
     },
 
+    /**
+     * Fill the address fields with one of the signed-in shopper's saved addresses.
+     */
+    useAddress(id) {
+        const address = this.addresses?.[id];
+
+        if (!address) {
+            return;
+        }
+
+        for (const [name, value] of Object.entries(address)) {
+            if (name === 'delivery_zone_id') {
+                if (value in this.zones) {
+                    this.zoneId = value;
+                }
+
+                continue;
+            }
+
+            const field = this.$root.elements.namedItem(name);
+
+            if (field) {
+                field.value = value;
+            }
+        }
+
+        this.saveDraft();
+    },
+
     saveDraft() {
         const fields = {};
 
