@@ -47,7 +47,7 @@ return [
     */
 
     'settings' => [
-        'store_name' => 'Doha AL WAFA',
+        'store_name' => 'BANAT AL WAFA',
         'contact_phone' => null,
         'whatsapp_number' => null,
         'contact_email' => null,

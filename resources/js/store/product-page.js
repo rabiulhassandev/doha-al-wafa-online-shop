@@ -76,7 +76,7 @@ export default (data) => ({
             this.size = null;
         }
 
-        this.$nextTick(() => document.querySelector(`[data-gallery="${colorSlug}"]`)?.scrollTo({ left: 0 }));
+        this.$nextTick(() => this.selectPhoto(0));
         this.updateAddress();
     },
 
@@ -124,8 +124,48 @@ export default (data) => ({
         }
     },
 
-    onGalleryScroll(gallery) {
-        this.imageIndex = Math.round(Math.abs(gallery.scrollLeft) / gallery.clientWidth);
+    get gallery() {
+        return this.$root.querySelector(`[data-product-gallery="${CSS.escape(this.color)}"]`);
+    },
+
+    selectPhoto(index) {
+        if (index < 0 || index >= this.current.images.length) {
+            return;
+        }
+
+        const track = this.gallery.querySelector('[data-photo-track]');
+        const slide = track.children[index].getBoundingClientRect();
+        const bounds = track.getBoundingClientRect();
+        const offset = (slide.left + slide.right - bounds.left - bounds.right) / 2;
+        track.scrollBy({ left: offset });
+        this.imageIndex = index;
+        this.revealThumbnail();
+    },
+
+    onGalleryScroll(track, colorSlug) {
+        if (colorSlug !== this.color || !track.clientWidth) {
+            return;
+        }
+
+        const index = Math.min(this.current.images.length - 1, Math.round(Math.abs(track.scrollLeft) / track.clientWidth));
+        if (index !== this.imageIndex) {
+            this.imageIndex = index;
+            this.revealThumbnail();
+        }
+    },
+
+    revealThumbnail() {
+        const strip = this.gallery.querySelector('[data-photo-thumbnails]');
+        if (!strip) {
+            return;
+        }
+
+        const button = strip.children[this.imageIndex].getBoundingClientRect();
+        const bounds = strip.getBoundingClientRect();
+        const offset = button.left < bounds.left ? button.left - bounds.left : Math.max(0, button.right - bounds.right);
+        if (offset) {
+            strip.scrollBy({ left: offset });
+        }
     },
 
     openLightbox(index) {
@@ -135,7 +175,9 @@ export default (data) => ({
 
     get shareUrl() {
         const url = new URL(this.url);
-        url.searchParams.set('color', this.color);
+        if (this.color) {
+            url.searchParams.set('color', this.color);
+        }
 
         if (this.size) {
             url.searchParams.set('size', this.size);
@@ -146,7 +188,7 @@ export default (data) => ({
 
     get whatsAppUrl() {
         const details = [this.current.name, this.sizeName(this.size)].filter(Boolean).join(', ');
-        const text = this.messages.whatsApp
+        const text = (details ? this.messages.whatsApp : this.messages.whatsAppProduct)
             .replace(':product', this.productName)
             .replace(':details', details)
             .replace(':url', this.shareUrl);
@@ -156,7 +198,11 @@ export default (data) => ({
 
     updateAddress() {
         const url = new URL(window.location.href);
-        url.searchParams.set('color', this.color);
+        if (this.color) {
+            url.searchParams.set('color', this.color);
+        } else {
+            url.searchParams.delete('color');
+        }
 
         if (this.size) {
             url.searchParams.set('size', this.size);

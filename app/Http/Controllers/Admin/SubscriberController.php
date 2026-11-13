@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Subscriber;
 use App\Support\Digits;
+use App\Support\SpreadsheetCsv;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -42,7 +43,7 @@ class SubscriberController extends Controller
             fputcsv($output, ['WhatsApp number', 'Email', 'Language', 'Joined'], escape: '');
 
             foreach (Subscriber::query()->oldest()->orderBy('id')->lazy(500) as $subscriber) {
-                fputcsv($output, [$subscriber->phone, $subscriber->email, $subscriber->locale, $subscriber->created_at->format('Y-m-d')], escape: '');
+                fputcsv($output, [SpreadsheetCsv::text($subscriber->phone), SpreadsheetCsv::text($subscriber->email), $subscriber->locale, $subscriber->created_at->format('Y-m-d')], escape: '');
             }
 
             fclose($output);

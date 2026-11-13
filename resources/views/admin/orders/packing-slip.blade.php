@@ -60,7 +60,7 @@
                     <td class="py-3 align-top text-lg font-semibold tabular-nums">{{ $item->quantity }} ×</td>
                     <td class="py-3">
                         <p class="font-medium">{{ $item->translated('product_name') }}</p>
-                        <p class="text-ink-700">{{ $item->translated('color_name') }} · {{ __('Size :size', ['size' => $item->translated('size_name')]) }}</p>
+                        <p class="text-ink-700">@if (filled($item->color_name_en)){{ $item->translated('color_name') }} · @endif{{ __('Size :size', ['size' => $item->translated('size_name')]) }}</p>
                         <p class="font-mono text-xs text-ink-500" dir="ltr">{{ $item->sku }}</p>
                     </td>
                 </tr>

@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * One color a product comes in, with its own photos and sizes.
+ * A product gallery and its sizes, optionally assigned to a palette color.
  */
 #[Fillable(['product_id', 'color_id', 'label_en', 'label_ar', 'sort_order', 'is_default', 'is_active'])]
 class ProductColor extends Model
@@ -102,17 +102,22 @@ class ProductColor extends Model
      */
     public function nameEn(): string
     {
-        return $this->displayName('en');
+        return $this->displayName('en') ?? 'Product';
+    }
+
+    public function hasColor(): bool
+    {
+        return $this->color_id !== null;
     }
 
     /**
      * Get the name shoppers see: this product's custom label, or the palette color name.
      */
-    public function displayName(?string $locale = null): string
+    public function displayName(?string $locale = null): ?string
     {
         $locale ??= app()->getLocale();
 
-        return $this->getAttribute("label_{$locale}") ?: $this->color->translated('name', $locale);
+        return $this->hasColor() ? ($this->getAttribute("label_{$locale}") ?: $this->color->translated('name', $locale)) : null;
     }
 
     /**

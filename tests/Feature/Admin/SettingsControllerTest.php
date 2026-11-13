@@ -13,7 +13,7 @@ use App\Services\Settings;
 function settingsPayload(array $overrides = []): array
 {
     return [
-        'store_name' => 'Doha AL WAFA',
+        'store_name' => 'BANAT AL WAFA',
         'contact_phone' => '',
         'whatsapp_number' => '',
         'contact_email' => '',
@@ -253,5 +253,16 @@ describe('ads and analytics', function () {
             ->assertOk()
             ->assertSee(url('feeds/meta.csv').'?token=secret-feed-123')
             ->assertSee(e(url('feeds/tiktok.csv').'?locale=ar&token=secret-feed-123'), false);
+    });
+
+    it('encrypts new feed passwords while keeping the existing feed URL format', function () {
+        $this->actingAs(User::factory()->owner()->create())
+            ->put(route('admin.settings.update'), settingsPayload(['feed_token' => 'new-feed-token']))
+            ->assertSessionHasNoErrors();
+
+        $settings = app(Settings::class);
+        expect($settings->get('feed_token'))->not->toBe('new-feed-token');
+        expect($settings->feedToken())->toBe('new-feed-token');
+        $this->get('/feeds/meta.csv?token=new-feed-token')->assertOk();
     });
 });

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Support\Money;
 use App\Support\OrderFilters;
+use App\Support\SpreadsheetCsv;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -38,19 +39,19 @@ class OrderExportController extends Controller
                     $order->status->label(),
                     $order->payment_status->label(),
                     $order->channel->label(),
-                    $order->customer_name,
-                    $order->customer_phone,
-                    $order->customer_email,
-                    $order->delivery_zone_name_en,
-                    $order->plateAddress(),
+                    SpreadsheetCsv::text($order->customer_name),
+                    SpreadsheetCsv::text($order->customer_phone),
+                    SpreadsheetCsv::text($order->customer_email),
+                    SpreadsheetCsv::text($order->delivery_zone_name_en),
+                    SpreadsheetCsv::text($order->plateAddress()),
                     (int) $order->items_sum_quantity,
                     Money::toInput($order->subtotal),
                     Money::toInput($order->delivery_fee),
                     Money::toInput($order->discount_total),
-                    $order->coupon_code,
+                    SpreadsheetCsv::text($order->coupon_code),
                     Money::toInput($order->grand_total),
-                    $order->sourceLabel(),
-                    $order->utm_campaign,
+                    SpreadsheetCsv::text($order->sourceLabel()),
+                    SpreadsheetCsv::text($order->utm_campaign),
                 ], escape: '');
             }
 

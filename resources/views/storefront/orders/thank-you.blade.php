@@ -82,7 +82,7 @@
             <div class="mt-5 rounded-2xl bg-maroon-50 p-5 text-maroon-900 sm:p-6">
                 <h2 class="font-semibold">{{ __('What happens next') }}</h2>
                 <ol class="mt-3 list-decimal space-y-2 ps-5 text-sm">
-                    <li>{{ __('We call or WhatsApp you on :phone to confirm your order.', ['phone' => $order->formattedPhone()]) }}</li>
+                    <li>{{ __('We will contact you on :phone to confirm your order.', ['phone' => $order->formattedPhone()]) }}</li>
                     <li>{{ $order->deliveryPromise() }}</li>
                     <li>{{ __('You pay :total in cash when your order arrives.', ['total' => Money::format($order->grand_total, $locale)]) }}</li>
                 </ol>
@@ -146,8 +146,11 @@
                             <div class="min-w-0 flex-1">
                                 <p class="text-sm leading-snug font-medium">{{ $item->translated('product_name') }}</p>
                                 <p class="mt-1 flex items-center gap-1.5 text-xs text-ink-500">
-                                    <span class="size-3 rounded-full ring-1 ring-ink-900/15" style="background-color: {{ $item->color_hex }}"></span>
-                                    {{ $item->translated('color_name') }} · {{ __('Size :size', ['size' => $item->translated('size_name')]) }}
+                                    @if (filled($item->color_name_en))
+                                        <span class="size-3 rounded-full ring-1 ring-ink-900/15" style="background-color: {{ $item->color_hex }}"></span>
+                                        {{ $item->translated('color_name') }} ·
+                                    @endif
+                                    {{ __('Size :size', ['size' => $item->translated('size_name')]) }}
                                 </p>
                                 <p class="mt-1 text-xs text-ink-500">{{ __('Quantity: :count', ['count' => $item->quantity]) }}</p>
                             </div>

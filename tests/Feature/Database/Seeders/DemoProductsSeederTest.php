@@ -2,6 +2,7 @@
 
 use App\Enums\ProductStatus;
 use App\Models\Product;
+use App\Models\ProductColor;
 use App\Models\ProductImage;
 use App\Models\ProductVariant;
 use Database\Seeders\CatalogDefaultsSeeder;
@@ -15,8 +16,10 @@ it('creates ready-to-sell demo products with photos and stock', function () {
     $this->seed(DemoProductsSeeder::class);
 
     expect(Product::query()->where('status', ProductStatus::Active)->count())->toBe(4);
-    expect(ProductVariant::query()->count())->toBe(3 * 4 + 3 * 4 + 3 * 4 + 2 * 1);
-    $this->assertDatabaseCount('product_images', 22);
+    expect(ProductVariant::query()->count())->toBe(13);
+    expect(ProductColor::query()->whereNull('color_id')->count())->toBe(4);
+    $this->assertDatabaseCount('colors', 0);
+    $this->assertDatabaseCount('product_images', 8);
     Storage::disk('public')->assertExists(ProductImage::query()->first()->directory.'/800.webp');
 
     $product = Product::query()->with(['colors.color', 'colors.images', 'variants'])->first();

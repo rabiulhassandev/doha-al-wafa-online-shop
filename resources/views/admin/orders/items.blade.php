@@ -18,7 +18,7 @@
                     <li class="flex flex-wrap items-center gap-4 py-3 first:pt-0">
                         <div class="min-w-0 flex-1">
                             <p class="font-medium">{{ $item->product_name_en }}</p>
-                            <p class="text-sm text-ink-700">{{ $item->color_name_en }} · Size {{ $item->size_name_en }} · {{ Money::format($item->unit_price) }} each</p>
+                            <p class="text-sm text-ink-700">@if (filled($item->color_name_en)){{ $item->color_name_en }} · @endif Size {{ $item->size_name_en }} · {{ Money::format($item->unit_price) }} each</p>
                             <p class="font-mono text-xs text-ink-500">
                                 {{ $item->sku }}
                                 @if ($item->productVariant)

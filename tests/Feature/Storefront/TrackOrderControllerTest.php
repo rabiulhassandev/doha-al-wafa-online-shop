@@ -19,7 +19,7 @@ it('shows the tracking form', function () {
         ->assertSee('تتبّع طلبك');
 });
 
-it('opens the order when the number and mobile number match', function (Closure $typedNumber, string $typedPhone) {
+it('opens the order when the order number and phone number match', function (Closure $typedNumber, string $typedPhone) {
     $order = trackedOrder();
 
     $response = $this->post(route('track.lookup', ['locale' => 'en']), ['number' => $typedNumber($order), 'phone' => $typedPhone]);
@@ -40,13 +40,13 @@ it('opens the order in the language of the tracking page', function () {
     expect($response->headers->get('Location'))->toContain("/ar/orders/{$order->number}/thank-you");
 });
 
-it('reveals nothing when the mobile number does not match', function () {
+it('reveals nothing when the phone number does not match', function () {
     $order = trackedOrder();
 
     $this->from(route('track.show', ['locale' => 'en']))
         ->post(route('track.lookup', ['locale' => 'en']), ['number' => $order->number, 'phone' => '6666 1234'])
         ->assertRedirect(route('track.show', ['locale' => 'en']))
-        ->assertSessionHasErrors(['number' => 'We could not find an order with this number and mobile number.']);
+        ->assertSessionHasErrors(['number' => 'We could not find an order with this order number and phone number.']);
 });
 
 it('slows down guessing', function () {

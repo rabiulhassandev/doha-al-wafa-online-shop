@@ -53,7 +53,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function (): void {
     Route::get('login', [AuthenticatedSessionController::class, 'create'])->name('login');
-    Route::post('login', [AuthenticatedSessionController::class, 'store'])->name('login.store');
+    Route::post('login', [AuthenticatedSessionController::class, 'store'])->middleware('throttle:60,1')->name('login.store');
 });
 
 Route::middleware(['auth', 'can:access-admin'])->group(function (): void {
@@ -94,6 +94,7 @@ Route::middleware(['auth', 'can:access-admin'])->group(function (): void {
         Route::resource('products', ProductController::class)->except('show');
 
         Route::prefix('products/{product}')->name('products.')->scopeBindings()->group(function (): void {
+            Route::post('without-color', [ProductColorController::class, 'useWithoutColor'])->name('without-color');
             Route::get('colors', [ProductColorController::class, 'index'])->name('colors.index');
             Route::post('colors', [ProductColorController::class, 'store'])->name('colors.store');
             Route::put('colors/{color}', [ProductColorController::class, 'update'])->name('colors.update');

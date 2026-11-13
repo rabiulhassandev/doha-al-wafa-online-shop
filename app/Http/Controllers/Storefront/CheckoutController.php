@@ -77,7 +77,7 @@ class CheckoutController extends Controller
      */
     public function store(PlaceOrderRequest $request, PlaceOrder $placeOrder, PaymentGateways $paymentGateways, SaveAddress $saveAddress): RedirectResponse
     {
-        $checkoutToken = $request->validated('checkout_token');
+        $checkoutToken = $request->checkoutToken();
         $alreadyPlaced = Order::query()->firstWhere('checkout_token', $checkoutToken);
 
         if ($alreadyPlaced !== null) {
@@ -95,7 +95,7 @@ class CheckoutController extends Controller
             ->all();
 
         try {
-            $order = $placeOrder->handle($quantities, $request->details(), (int) $request->validated('expected_subtotal'));
+            $order = $placeOrder->handle($quantities, $request->details($checkoutToken), (int) $request->validated('expected_subtotal'));
         } catch (OrderNotPlacedException $exception) {
             return to_route('checkout.show')->withInput()->withErrors(['order' => $exception->getMessage()]);
         } catch (UniqueConstraintViolationException $exception) {

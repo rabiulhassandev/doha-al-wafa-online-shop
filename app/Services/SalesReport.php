@@ -231,6 +231,7 @@ class SalesReport
     {
         return $this->itemRows(
             $this->keptItems($period)
+                ->where('order_items.color_name_en', '!=', '')
                 ->addSelect('order_items.color_name_en as label')
                 ->selectRaw('MAX(order_items.color_hex) as hex')
                 ->groupBy('order_items.color_name_en'),
@@ -273,7 +274,7 @@ class SalesReport
             ->get();
 
         return $rows->map(fn (object $row): array => [
-            'label' => "{$row->product} – {$row->color} / {$row->size}",
+            'label' => $row->color === '' ? "{$row->product} – {$row->size}" : "{$row->product} – {$row->color} / {$row->size}",
             'product' => (string) $row->product,
             'color' => (string) $row->color,
             'size' => (string) $row->size,

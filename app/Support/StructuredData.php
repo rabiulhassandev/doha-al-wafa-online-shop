@@ -104,8 +104,8 @@ final class StructuredData
                 $variants[] = [
                     '@type' => 'Product',
                     'sku' => $variant->sku,
-                    'name' => "{$name} – {$colorName} / {$sizeName}",
-                    'color' => $colorName,
+                    'name' => $colorName === null ? "{$name} – {$sizeName}" : "{$name} – {$colorName} / {$sizeName}",
+                    ...($colorName === null ? [] : ['color' => $colorName]),
                     'size' => $sizeName,
                     'image' => $images,
                     'offers' => self::offer($product, $productColor, $variant),
@@ -121,7 +121,9 @@ final class StructuredData
             'url' => route('products.show', $product),
             'brand' => ['@type' => 'Brand', 'name' => $storeName],
             'productGroupID' => $product->code ?: 'P'.$product->id,
-            'variesBy' => ['https://schema.org/color', 'https://schema.org/size'],
+            'variesBy' => $colors->contains(fn (ProductColor $color): bool => $color->hasColor())
+                ? ['https://schema.org/color', 'https://schema.org/size']
+                : ['https://schema.org/size'],
             'hasVariant' => $variants,
         ], fn (mixed $value): bool => $value !== null);
     }
@@ -133,7 +135,7 @@ final class StructuredData
     {
         return [
             '@type' => 'Offer',
-            'url' => route('products.show', ['product' => $product, 'color' => $productColor->color->slug, 'size' => $variant->size->slug]),
+            'url' => route('products.show', ['product' => $product, 'color' => $productColor->color?->slug, 'size' => $variant->size->slug]),
             'price' => number_format(($variant->price ?? $product->price) / 100, 2, '.', ''),
             'priceCurrency' => 'QAR',
             'availability' => $variant->stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',

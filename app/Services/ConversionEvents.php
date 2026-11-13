@@ -5,9 +5,10 @@ namespace App\Services;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Support\QatarPhone;
-use Illuminate\Http\Client\RequestException;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use RuntimeException;
 
 /**
  * Sends placed orders to Meta (Conversions API) and TikTok (Events API) from the server, so purchases
@@ -33,7 +34,7 @@ class ConversionEvents
     /**
      * Send a placed order to every platform that is set up.
      *
-     * @throws RequestException when a platform rejects the event, so the queued job tries again
+     * @throws RuntimeException when a platform rejects the event, so the queued job tries again
      */
     public function sendPurchase(Order $order): void
     {
@@ -144,17 +145,22 @@ class ConversionEvents
      * @param  array<string, mixed>  $payload
      * @param  array<string, string>  $headers
      *
-     * @throws RequestException
+     * @throws RuntimeException
      */
     private function post(string $platform, string $url, array $payload, array $headers = []): void
     {
-        $response = Http::timeout(10)->withHeaders($headers)->acceptJson()->asJson()->post($url, $payload);
-
-        if ($response->failed()) {
-            Log::warning("{$platform} rejected a purchase event.", ['status' => $response->status(), 'body' => $response->body()]);
+        try {
+            $response = Http::timeout(10)->withHeaders($headers)->acceptJson()->asJson()->post($url, $payload);
+        } catch (ConnectionException) {
+            // Transport errors can include the full URL, which may contain an access token.
+            throw new RuntimeException("Could not connect to {$platform} to send a purchase event.");
         }
 
-        $response->throw();
+        if ($response->failed()) {
+            Log::warning("{$platform} rejected a purchase event.", ['status' => $response->status()]);
+
+            throw new RuntimeException("{$platform} rejected a purchase event (HTTP {$response->status()}).");
+        }
     }
 
     /**

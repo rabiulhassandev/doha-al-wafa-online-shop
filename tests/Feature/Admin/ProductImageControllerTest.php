@@ -48,20 +48,20 @@ describe('store', function () {
         expect($productColor->images()->pluck('sort_order')->all())->toBe([40, 50, 60]);
     });
 
-    it('rejects photos that are too small', function () {
+    it('rejects photos outside the allowed dimensions', function (int $width, int $height) {
         Storage::fake('public');
         $productColor = ProductColor::factory()->create();
 
         $this->actingAs(User::factory()->staff()->create())
             ->postJson(route('admin.products.colors.images.store', [$productColor->product, $productColor]), [
-                'images' => [UploadedFile::fake()->image('tiny.jpg', 300, 300)],
+                'images' => [UploadedFile::fake()->image('photo.jpg', $width, $height)],
                 'focus' => 'center',
             ])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['images.0' => 'Photos must be at least 500 × 625 pixels.']);
+            ->assertJsonValidationErrors(['images.0' => 'Photos must be at least 500 × 625 pixels and at most 4096 pixels on either side.']);
 
         $this->assertDatabaseCount('product_images', 0);
-    });
+    })->with(['too small' => [300, 300], 'too wide' => [4097, 625], 'too tall' => [500, 4097]]);
 
     it('stops at twelve photos per color', function () {
         Storage::fake('public');

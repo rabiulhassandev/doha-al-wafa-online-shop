@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Actions\ChangePassword;
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreStaffRequest;
@@ -67,16 +68,22 @@ class StaffController extends Controller
     /**
      * Update a team member.
      */
-    public function update(UpdateStaffRequest $request, User $staff): RedirectResponse
+    public function update(UpdateStaffRequest $request, User $staff, ChangePassword $changePassword): RedirectResponse
     {
         $staff->fill($request->safe()->only(['name', 'email']));
         $staff->role = $request->enum('role', UserRole::class);
 
         if ($request->filled('password')) {
-            $staff->password = $request->validated('password');
+            $currentSessionId = $staff->is($request->user()) ? $request->session()->getId() : null;
+            $changePassword->handle($staff, $request->validated('password'), $currentSessionId);
+            if ($currentSessionId !== null) {
+                // The admin route binding and the session guard load separate user instances.
+                $request->user()->refresh();
+                $request->session()->regenerate(true);
+            }
+        } else {
+            $staff->save();
         }
-
-        $staff->save();
 
         return to_route('admin.staff.index')->with('status', "{$staff->name} was updated.");
     }

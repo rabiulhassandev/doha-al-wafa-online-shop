@@ -8,7 +8,7 @@
     $variant = $line->variant;
     $productColor = $variant->productColor;
     $image = $productColor->images->first();
-    $url = route('products.show', ['product' => $variant->product, 'color' => $productColor->color->slug, 'size' => $variant->size->slug]);
+    $url = route('products.show', ['product' => $variant->product, 'color' => $productColor->color?->slug, 'size' => $variant->size->slug]);
 @endphp
 
 <li class="flex gap-4 py-4">
@@ -25,8 +25,11 @@
             <div class="min-w-0">
                 <a href="{{ $url }}" class="block text-sm leading-snug font-medium hover:underline">{{ $variant->product->translated('name') }}</a>
                 <p class="mt-1 flex items-center gap-1.5 text-xs text-ink-500">
-                    <span class="size-3 rounded-full ring-1 ring-ink-900/15" style="background-color: {{ $productColor->color->hex }}"></span>
-                    {{ $productColor->displayName() }} · {{ __('Size :size', ['size' => $variant->size->translated('name')]) }}
+                    @if ($productColor->hasColor())
+                        <span class="size-3 rounded-full ring-1 ring-ink-900/15" style="background-color: {{ $productColor->color->hex }}"></span>
+                        {{ $productColor->displayName() }} ·
+                    @endif
+                    {{ __('Size :size', ['size' => $variant->size->translated('name')]) }}
                 </p>
             </div>
             <p class="shrink-0 text-end text-sm">

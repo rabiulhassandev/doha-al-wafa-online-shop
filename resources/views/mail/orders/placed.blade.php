@@ -15,7 +15,7 @@
 >
     <h1 style="margin: 0 0 8px; font-size: 20px;">{{ __('Thank you, :name!', ['name' => $order->customer_name]) }}</h1>
     <p style="margin: 0 0 16px;">
-        {{ __('We received your order :number. We will call or WhatsApp you on :phone to confirm it.', ['number' => $order->number, 'phone' => $order->formattedPhone()]) }}
+        {{ __('We received your order :number. We will contact you on :phone to confirm it.', ['number' => $order->number, 'phone' => $order->formattedPhone()]) }}
     </p>
 
     <p style="margin: 0 0 16px; padding: 12px 16px; border-radius: 12px; background-color: #f8edf0; color: #63172a;">

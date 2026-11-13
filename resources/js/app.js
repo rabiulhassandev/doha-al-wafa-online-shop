@@ -1,6 +1,6 @@
 import Alpine from 'alpinejs';
 import cart from './store/cart';
-import checkoutForm, { forgetCheckoutDraft } from './store/checkout-form';
+import checkoutForm, { clearLegacyCheckoutDraft, forgetCheckoutDraft } from './store/checkout-form';
 import consentBar from './store/consent-bar';
 import productCards from './store/product-cards';
 import productListing from './store/product-listing';
@@ -40,5 +40,6 @@ Alpine.data('searchBox', searchBox);
 
 window.Alpine = Alpine;
 
+clearLegacyCheckoutDraft();
 Alpine.start();
 startTracking();

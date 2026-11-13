@@ -41,8 +41,11 @@
                             <div class="min-w-0 flex-1">
                                 <p class="font-medium">{{ $item->product_name_en }}</p>
                                 <p class="mt-0.5 flex items-center gap-1.5 text-sm text-ink-700">
-                                    <span class="size-3 rounded-full ring-1 ring-ink-900/15" style="background-color: {{ $item->color_hex }}"></span>
-                                    {{ $item->color_name_en }} · Size {{ $item->size_name_en }}
+                                    @if (filled($item->color_name_en))
+                                        <span class="size-3 rounded-full ring-1 ring-ink-900/15" style="background-color: {{ $item->color_hex }}"></span>
+                                        {{ $item->color_name_en }} ·
+                                    @endif
+                                    Size {{ $item->size_name_en }}
                                 </p>
                                 <p class="font-mono text-xs text-ink-500">{{ $item->sku }}</p>
                                 @if ($item->productVariant === null)

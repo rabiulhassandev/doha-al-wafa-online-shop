@@ -17,7 +17,7 @@ class SettingsController extends Controller
     public function edit(Settings $settings): View
     {
         return view('admin.settings.edit', [
-            'settings' => $settings->all(),
+            'settings' => [...$settings->all(), 'feed_token' => $settings->feedToken()],
             'contactPhone' => $settings->phone('contact_phone')?->formatted(),
             'whatsAppNumber' => $settings->phone('whatsapp_number')?->formatted(),
             'deliveryFreeOver' => Money::toInput($settings->get('delivery_free_over')),
@@ -46,7 +46,7 @@ class SettingsController extends Controller
      */
     private function feedUrls(Settings $settings): array
     {
-        $token = $settings->get('feed_token') ?: null;
+        $token = $settings->feedToken();
         $feedUrls = [];
 
         foreach (['meta' => 'Meta', 'tiktok' => 'TikTok'] as $platform => $platformName) {

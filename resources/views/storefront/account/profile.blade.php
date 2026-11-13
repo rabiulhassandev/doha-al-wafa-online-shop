@@ -9,6 +9,7 @@
                 <x-store.text-field name="name" :label="__('Full name')" :value="$user->name" autocomplete="name" maxlength="120" required />
                 <x-store.text-field name="email" type="email" inputmode="email" autocomplete="email" maxlength="190" :label="__('Email')" :value="$user->email" required />
                 <x-store.phone-field :label="__('Mobile number')" :value="$phone" required />
+                <x-store.text-field name="current_password" type="password" autocomplete="current-password" :label="__('Current password')" :hint="__('Enter your current password to change your email.')" />
                 <x-store.button type="submit" class="justify-self-start">{{ __('Save details') }}</x-store.button>
             </form>
         </section>
@@ -24,9 +25,9 @@
                     ['password_confirmation', __('New password again'), 'new-password'],
                 ] as [$field, $label, $autocomplete])
                     <div>
-                        <label for="{{ $field }}" class="block text-sm font-medium">{{ $label }}</label>
+                        <label for="change-{{ $field }}" class="block text-sm font-medium">{{ $label }}</label>
                         <input
-                            id="{{ $field }}"
+                            id="change-{{ $field }}"
                             name="{{ $field }}"
                             type="password"
                             autocomplete="{{ $autocomplete }}"

@@ -21,7 +21,7 @@
     $locale = app()->getLocale();
     $storeName = $settings->get('store_name');
     $ogLocales = ['en' => 'en_US', 'ar' => 'ar_AR'];
-    $trackingConfig = $tracking->browserConfig();
+    $trackingConfig = request()->routeIs('account.password.reset', 'account.profile.email.show') ? null : $tracking->browserConfig();
 @endphp
 
 <!DOCTYPE html>

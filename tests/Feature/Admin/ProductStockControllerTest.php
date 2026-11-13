@@ -21,15 +21,32 @@ describe('edit', function () {
             ->assertSee('name="cells['.$variant->product_color_id.']['.$unusedSize->id.'][stock]"', false);
     });
 
-    it('asks for colors before sizes', function () {
+    it('asks for a gallery before sizes on an older product without one', function () {
         $this->actingAs(User::factory()->staff()->create())
             ->get(route('admin.products.stock.edit', Product::factory()->create()))
             ->assertOk()
-            ->assertSee('Add at least one color before choosing sizes.');
+            ->assertSee('Set up product photos before choosing sizes.');
     });
 });
 
 describe('update', function () {
+    it('creates stock and a size-only SKU for a product without colors', function () {
+        $product = Product::factory()->create(['code' => 'DW0090']);
+        $gallery = ProductColor::factory()->for($product)->create(['color_id' => null]);
+        $size = Size::factory()->create(['slug' => '56']);
+
+        $this->actingAs(User::factory()->staff()->create())
+            ->put(route('admin.products.stock.update', $product), [
+                'size_ids' => [$size->id],
+                'cells' => [$gallery->id => [$size->id => ['stock' => 4, 'original_stock' => 0, 'offered' => true]]],
+            ])
+            ->assertRedirectToRoute('admin.products.stock.edit', $product)
+            ->assertSessionHasNoErrors();
+
+        $variant = $gallery->variants()->sole();
+        expect($variant->sku)->toBe('DW0090-56')->and($variant->stock)->toBe(4);
+    });
+
     it('saves a 3 color × 4 size grid', function () {
         $product = Product::factory()->create(['code' => 'DW0003']);
         $productColors = collect(['navy', 'olive', 'rose'])->map(

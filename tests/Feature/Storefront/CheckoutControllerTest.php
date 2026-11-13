@@ -5,6 +5,11 @@ use App\Models\CartItem;
 use App\Models\Coupon;
 use App\Models\DeliveryZone;
 use App\Models\Order;
+use App\Models\Product;
+use App\Models\ProductColor;
+use App\Models\ProductImage;
+use App\Models\ProductVariant;
+use App\Models\Size;
 use App\Services\CartService;
 use App\Services\Settings;
 use Illuminate\Support\Facades\Mail;
@@ -61,6 +66,31 @@ function submitCheckout(CartItem $item, array $payload, string $locale = 'en'): 
     return test()->withCookie(CartService::COOKIE, $item->cart->token)
         ->post(route('checkout.store', ['locale' => $locale]), $payload);
 }
+
+it('sells a product by size without displaying a color', function () {
+    $product = Product::factory()->active()->create(['name_en' => 'Classic jelabiya', 'price' => 18500]);
+    $gallery = ProductColor::factory()->for($product)->create(['color_id' => null, 'is_default' => true]);
+    ProductImage::factory()->for($gallery)->create();
+    $size = Size::factory()->create(['slug' => '56', 'name_en' => '56']);
+    $variant = ProductVariant::factory()->for($gallery)->for($size)->inStock(3)->create();
+    $item = CartItem::factory()->for($variant)->create(['quantity' => 1]);
+
+    $this->get('/en/shop')->assertOk()->assertSee('Classic jelabiya')->assertDontSee('name="color[]"', false);
+    $this->get(route('products.show', ['locale' => 'en', 'product' => $product, 'size' => '56']))
+        ->assertOk()
+        ->assertSee('BANAT AL WAFA')
+        ->assertSee('Choose a size')
+        ->assertDontSee('selectColor(', false)
+        ->assertDontSee('schema.org/color');
+    $this->withCookie(CartService::COOKIE, $item->cart->token)->get('/en/checkout')->assertOk()->assertSee('Size 56');
+    $response = submitCheckout($item, checkoutPayload(DeliveryZone::factory()->create()));
+
+    $order = Order::query()->sole();
+    $response->assertRedirect($order->confirmationUrl());
+    $this->get($order->confirmationUrl())->assertOk()->assertSee('Size 56')->assertDontSee('background-color: "', false);
+    expect($order->items()->sole()->color_name_en)->toBe('');
+    expect($variant->fresh()->stock)->toBe(2);
+});
 
 it('goes straight to checkout with only the "Order now" item', function () {
     $inBag = CartItem::factory()->for(listedProduct(['name_en' => 'Already in bag'])->variants()->sole())->create();
@@ -169,39 +199,45 @@ describe('placing an order', function () {
     it('explains mistakes in the shopper’s language', function () {
         $item = bagWithOnePiece();
 
-        submitCheckout($item, checkoutPayload(DeliveryZone::factory()->create(), ['name' => '', 'phone' => '4444 1234', 'zone_number' => '']), 'ar')
+        submitCheckout($item, checkoutPayload(DeliveryZone::factory()->create(), ['name' => '', 'phone' => '4444 123', 'zone_number' => '']), 'ar')
             ->assertSessionHasErrors([
                 'name' => 'أدخل اسمك الكامل.',
-                'phone' => 'أدخل رقم جوال قطري من 8 أرقام.',
+                'phone' => 'أدخل رقم هاتف قطري من 8 أرقام.',
                 'zone_number' => 'أدخل رقم المنطقة من اللوحة الزرقاء.',
             ]);
 
         $this->assertDatabaseCount('orders', 0);
     });
 
-    it('accepts Qatar mobile numbers written in any common way', function (string $phone) {
+    it('accepts Qatar phone numbers written in any common way', function (string $phone, string $normalized) {
+        $this->freezeTime();
         $item = bagWithOnePiece();
 
         submitCheckout($item, checkoutPayload(DeliveryZone::factory()->create(), ['phone' => $phone]))->assertSessionHasNoErrors();
 
-        expect(Order::query()->sole()->customer_phone)->toBe('+97455551234');
+        $order = Order::query()->sole();
+        expect($order->customer_phone)->toBe($normalized);
+
+        $this->post(route('track.lookup', ['locale' => 'en']), ['number' => $order->number, 'phone' => $phone])
+            ->assertRedirect($order->confirmationUrl('en'));
     })->with([
-        'local' => '5555 1234',
-        'international' => '+974 5555 1234',
-        'with 00' => '00974 5555 1234',
-        'Arabic digits' => '٥٥٥٥ ١٢٣٤',
+        'local mobile' => ['5555 1234', '+97455551234'],
+        'international mobile' => ['+974 5555 1234', '+97455551234'],
+        'mobile with 00' => ['00974 5555 1234', '+97455551234'],
+        'mobile with Arabic digits' => ['٥٥٥٥ ١٢٣٤', '+97455551234'],
+        'local landline' => ['4444 1234', '+97444441234'],
+        'international landline' => ['+974 4444 1234', '+97444441234'],
     ]);
 
-    it('rejects numbers that are not Qatar mobiles', function (string $phone) {
+    it('rejects invalid Qatar phone numbers', function (string $phone) {
         $item = bagWithOnePiece();
 
         submitCheckout($item, checkoutPayload(DeliveryZone::factory()->create(), ['phone' => $phone]))
-            ->assertSessionHasErrors(['phone' => 'Enter a Qatar mobile number with 8 digits.']);
+            ->assertSessionHasErrors(['phone' => 'Enter a Qatar phone number with 8 digits.']);
 
         $this->assertDatabaseCount('orders', 0);
     })->with([
         'too short' => '5555 123',
-        'landline' => '4444 1234',
         'another country' => '+971 50 123 4567',
     ]);
 

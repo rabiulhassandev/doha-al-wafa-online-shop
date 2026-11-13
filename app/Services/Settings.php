@@ -55,6 +55,18 @@ class Settings
         }
     }
 
+    public function feedToken(): ?string
+    {
+        $value = $this->get('feed_token');
+
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        // Existing installations have a plaintext token until the owner saves the settings again.
+        return preg_match('/\A[A-Za-z0-9_-]{8,64}\z/', $value) === 1 ? $value : Crypt::decryptString($value);
+    }
+
     /**
      * Encrypt a value for saving as a secret setting.
      */

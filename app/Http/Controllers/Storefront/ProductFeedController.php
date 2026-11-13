@@ -21,23 +21,23 @@ class ProductFeedController extends Controller
     {
         abort_unless(in_array($platform, ProductFeed::PLATFORMS, true), 404);
 
-        $token = (string) $settings->get('feed_token');
-        abort_if($token !== '' && ! hash_equals($token, (string) $request->query('token')), 404);
+        $token = $settings->feedToken();
+        $providedToken = $request->query('token');
+        abort_if($token !== null && (! is_string($providedToken) || ! hash_equals($token, $providedToken)), 404);
 
-        $locale = array_key_exists((string) $request->query('locale'), config('shop.locales'))
-            ? (string) $request->query('locale')
-            : config('shop.default_locale');
+        $locale = $request->query('locale');
+        $locale = is_string($locale) && array_key_exists($locale, config('shop.locales')) ? $locale : config('shop.default_locale');
 
         // The text is cached rather than the products: the cache does not store models.
         $csv = Cache::remember(
-            "product-feed.{$platform}.{$locale}",
+            "product-feed.v2.{$platform}.{$locale}",
             now()->addMinutes(self::CACHE_MINUTES),
             fn (): string => $productFeed->csv($platform, $locale),
         );
 
         return response($csv, 200, [
             'Content-Type' => 'text/csv; charset=UTF-8',
-            'Cache-Control' => 'public, max-age=900',
+            'Cache-Control' => 'private, no-store',
         ]);
     }
 }

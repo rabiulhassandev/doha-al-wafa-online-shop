@@ -18,7 +18,8 @@
             <td style="padding: 12px 8px; vertical-align: top; font-size: 14px;">
                 <strong>{{ $item->translated('product_name') }}</strong><br>
                 <span style="color: #6b625a;">
-                    {{ $item->translated('color_name') }} · {{ __('Size :size', ['size' => $item->translated('size_name')]) }} · × {{ $item->quantity }}
+                    @if (filled($item->color_name_en)){{ $item->translated('color_name') }} · @endif
+                    {{ __('Size :size', ['size' => $item->translated('size_name')]) }} · × {{ $item->quantity }}
                     @if ($showSku)
                         <br>SKU {{ $item->sku }}
                     @endif

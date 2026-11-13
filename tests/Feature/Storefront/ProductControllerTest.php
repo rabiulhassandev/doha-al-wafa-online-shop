@@ -2,6 +2,7 @@
 
 use App\Models\Category;
 use App\Models\DeliveryZone;
+use App\Models\ProductImage;
 use App\Models\SizeGuide;
 use App\Models\User;
 use App\Services\Settings;
@@ -115,6 +116,27 @@ it('links the photo and canonical address for sharing', function () {
         ->assertOk()
         ->assertSee('<link rel="canonical" href="'.route('products.show', ['locale' => 'en', 'product' => $product]).'">', false)
         ->assertSee('<meta property="og:image" content="'.$product->colors()->first()->images()->first()->url(1200).'">', false);
+});
+
+it('shows photo controls only for galleries with multiple images', function () {
+    $product = listedProduct(stockByColor: ['navy' => ['56' => 2], 'olive' => ['56' => 2]]);
+    $navy = $product->colors()->firstWhere('is_default', true);
+    $secondPhoto = ProductImage::factory()->for($navy)->create(['sort_order' => 100]);
+
+    $this->get(route('products.show', ['locale' => 'en', 'product' => $product]))
+        ->assertOk()
+        ->assertSee('aria-label="Previous photo"', false)
+        ->assertSee('aria-label="Show photo 2"', false)
+        ->assertSee('aria-label="Next photo"', false)
+        ->assertSee($secondPhoto->url(400))
+        ->assertViewHas('pageData', fn (array $data) => count($data['colors']['navy']['images']) === 2
+            && count($data['colors']['olive']['images']) === 1);
+
+    $single = listedProduct();
+    $this->get(route('products.show', ['locale' => 'ar', 'product' => $single]))
+        ->assertOk()
+        ->assertDontSee('data-photo-thumbnails', false)
+        ->assertSee('تكبير الصورة 1');
 });
 
 it('gives the size picker what it needs to add to the bag', function () {

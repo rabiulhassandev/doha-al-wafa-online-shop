@@ -47,7 +47,7 @@ class ProductCard extends Component
     {
         $locale = app()->getLocale();
         $displayColor = $product->displayColor($preferredColorIds);
-        $listedColors = $product->listedColors();
+        $listedColors = $product->listedColors()->filter(fn (ProductColor $productColor): bool => $productColor->hasColor());
 
         $this->name = $product->translated('name');
         $this->url = $this->colorUrl($displayColor);
@@ -102,7 +102,7 @@ class ProductCard extends Component
     {
         return route('products.show', array_filter([
             'product' => $this->product,
-            'color' => $productColor?->color->slug,
+            'color' => $productColor?->color?->slug,
         ]));
     }
 }

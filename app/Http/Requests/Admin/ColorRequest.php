@@ -48,7 +48,7 @@ class ColorRequest extends FormRequest
             'name_ar' => ['required', 'string', 'max:60'],
             'slug' => ['required', 'string', 'max:80', Rule::unique(Color::class)->ignore($this->color())],
             'hex' => ['required', 'regex:/^#[0-9a-f]{6}$/'],
-            'swatch' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'swatch' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048', 'dimensions:max_width=4096,max_height=4096'],
             'remove_swatch' => ['boolean'],
             'sort_order' => ['nullable', 'integer', 'min:0', 'max:9999'],
         ];

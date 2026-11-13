@@ -10,7 +10,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 /**
- * "Track your order": the order number and the mobile number it was placed with open the order's page.
+ * "Track your order": the order number and the phone number it was placed with open the order's page.
  */
 class TrackOrderController extends Controller
 {
@@ -29,14 +29,14 @@ class TrackOrderController extends Controller
             'phone' => ['required', 'string', 'max:30'],
         ], [
             'number.required' => __('Enter your order number.'),
-            'phone.required' => __('Enter the mobile number you ordered with.'),
+            'phone.required' => __('Enter the phone number you ordered with.'),
         ]);
 
         $order = Order::findByTypedNumber($validated['number']);
         $phone = QatarPhone::tryParse($validated['phone']);
 
         if ($order === null || $phone === null || $order->customer_phone !== $phone->e164()) {
-            return back()->withInput()->withErrors(['number' => __('We could not find an order with this number and mobile number.')]);
+            return back()->withInput()->withErrors(['number' => __('We could not find an order with this order number and phone number.')]);
         }
 
         return redirect($order->confirmationUrl(app()->getLocale()));

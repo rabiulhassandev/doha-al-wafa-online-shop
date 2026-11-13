@@ -30,7 +30,7 @@ class ProductImageRequest extends FormRequest
     {
         return [
             'images' => ['required', 'array', 'min:1', 'max:'.self::MAX_IMAGES_PER_COLOR],
-            'images.*' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:15360', 'dimensions:min_width=500,min_height=625'],
+            'images.*' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:15360', 'dimensions:min_width=500,min_height=625,max_width=4096,max_height=4096'],
             'focus' => ['required', Rule::enum(ImageFocus::class)],
         ];
     }
@@ -69,7 +69,7 @@ class ProductImageRequest extends FormRequest
             'images.*.image' => 'Photos must be JPG, PNG or WebP images.',
             'images.*.mimes' => 'Photos must be JPG, PNG or WebP images.',
             'images.*.max' => 'Each photo must be smaller than 15 MB.',
-            'images.*.dimensions' => 'Photos must be at least 500 × 625 pixels.',
+            'images.*.dimensions' => 'Photos must be at least 500 × 625 pixels and at most 4096 pixels on either side.',
         ];
     }
 

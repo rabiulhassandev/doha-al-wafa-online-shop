@@ -30,8 +30,9 @@
             'inStock' => __('In stock'),
             'onlyLeft' => __('Only :count left'),
             'sizeSoldOut' => __('Sold out in this size'),
-            'colorSoldOut' => __('This color is sold out'),
+            'colorSoldOut' => $selectedColor->hasColor() ? __('This color is sold out') : __('Sold out'),
             'whatsApp' => __('Hello! I am interested in :product (:details). :url'),
+            'whatsAppProduct' => __('Hello! I am interested in :product. :url'),
             'addFailed' => __('Could not add to your bag. Please try again.'),
         ],
     ];
@@ -54,9 +55,9 @@
     :description="$product->translated('meta_description') ?: \Illuminate\Support\Str::limit((string) $product->translated('description'), 155)"
     og-type="product"
     :og-title="$colors->count() > 1 ? $name.' – '.$selectedColor->displayName() : $name"
-    :og-url="route('products.show', ['product' => $product, 'color' => $selectedColor->color->slug])"
+    :og-url="route('products.show', ['product' => $product, 'color' => $selectedColor->color?->slug])"
     :og-image="$coverImage->url(1200)"
-    :og-image-alt="$name.' – '.$selectedColor->displayName()"
+    :og-image-alt="$selectedColor->hasColor() ? $name.' – '.$selectedColor->displayName() : $name"
     :whats-app-button="false"
 >
     <x-store.track-event :event="$trackingEvent" />
@@ -70,31 +71,32 @@
             <x-store.breadcrumbs :items="$breadcrumbs" />
         </div>
 
-        <div class="page-container mt-4 lg:grid lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-start lg:gap-12">
-            {{-- Gallery: one per color, only the chosen one is shown. Hidden photos are not downloaded. --}}
-            <div class="-mx-4 sm:mx-0">
+        <div class="page-container mt-4 lg:grid lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:items-start lg:gap-12">
+            <div class="mx-auto w-full max-w-lg lg:mx-0">
                 @foreach ($colors as $productColor)
-                    @php($slug = $productColor->color->slug)
-                    <div x-show="color === @js($slug)" @unless ($productColor->is($selectedColor)) style="display: none" @endunless>
+                    @php($slug = $productColor->color?->slug ?? '')
+                    <div data-product-gallery="{{ $slug }}" x-show="color === @js($slug)" @unless ($productColor->is($selectedColor)) style="display: none" @endunless>
                         <div
-                            data-gallery="{{ $slug }}"
-                            x-on:scroll.debounce.50ms="onGalleryScroll($el)"
-                            class="flex snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] lg:grid lg:grid-cols-2 lg:gap-3 lg:overflow-visible [&::-webkit-scrollbar]:hidden"
+                            data-photo-track
+                            x-on:scroll.debounce.50ms="onGalleryScroll($el, @js($slug))"
+                            class="flex snap-x snap-mandatory overflow-x-auto rounded-2xl border border-sand-200 bg-sand-100 [scrollbar-width:none]"
                         >
                             @foreach ($productColor->images as $image)
                                 <button
                                     type="button"
                                     x-on:click="openLightbox({{ $loop->index }})"
-                                    @class(['w-full shrink-0 snap-center lg:w-auto', 'lg:col-span-2' => $loop->first])
+                                    tabindex="{{ $loop->first ? 0 : -1 }}"
+                                    x-bind:tabindex="imageIndex === {{ $loop->index }} ? 0 : -1"
+                                    class="aspect-square w-full shrink-0 snap-center cursor-zoom-in focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-maroon-700"
                                 >
                                     <img
                                         src="{{ $image->url(800) }}"
                                         srcset="{{ $image->srcset() }}"
-                                        sizes="(min-width: 1024px) 55vw, 100vw"
-                                        alt="{{ $name }} – {{ $productColor->displayName() }}"
+                                        sizes="(min-width: 640px) 512px, 100vw"
+                                        alt="{{ $productColor->hasColor() ? $name.' – '.$productColor->displayName() : $name }}"
                                         width="1200"
                                         height="1500"
-                                        class="aspect-[4/5] w-full bg-sand-100 object-cover sm:rounded-2xl"
+                                        class="size-full object-contain"
                                         @if ($loop->first && $productColor->is($selectedColor)) fetchpriority="high" @else loading="lazy" decoding="async" @endif
                                     >
                                     <span class="sr-only">{{ __('Enlarge photo :number', ['number' => $loop->iteration]) }}</span>
@@ -103,10 +105,27 @@
                         </div>
 
                         @if ($productColor->images->count() > 1)
-                            <div class="mt-3 flex justify-center gap-1.5 lg:hidden" aria-hidden="true">
-                                @foreach ($productColor->images as $image)
-                                    <span class="h-1.5 rounded-full transition-all" x-bind:class="imageIndex === {{ $loop->index }} ? 'w-5 bg-ink-900' : 'w-1.5 bg-ink-300'"></span>
-                                @endforeach
+                            <div class="mt-3 grid grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] items-center gap-2" role="group" aria-label="{{ __('Photo thumbnails') }}">
+                                <button type="button" x-on:click="selectPhoto(imageIndex - 1)" disabled x-bind:disabled="imageIndex === 0" aria-label="{{ __('Previous photo') }}" class="grid size-10 place-items-center rounded-full border border-sand-200 bg-white hover:border-maroon-700 disabled:opacity-35">
+                                    <x-icon name="chevron-end" class="size-5 rotate-180 rtl:rotate-0" />
+                                </button>
+                                <div data-photo-thumbnails class="flex gap-2 overflow-x-auto [scrollbar-width:none]">
+                                    @foreach ($productColor->images as $image)
+                                        <button
+                                            type="button"
+                                            x-on:click="selectPhoto({{ $loop->index }})"
+                                            aria-label="{{ __('Show photo :number', ['number' => $loop->iteration]) }}"
+                                            aria-pressed="{{ $loop->first ? 'true' : 'false' }}"
+                                            x-bind:aria-pressed="(imageIndex === {{ $loop->index }}).toString()"
+                                            class="size-14 shrink-0 overflow-hidden rounded-lg border-2 border-sand-200 bg-white p-0.5 hover:border-maroon-600 aria-pressed:border-maroon-700 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-maroon-700 sm:size-16"
+                                        >
+                                            <img src="{{ $image->url(400) }}" alt="" loading="lazy" decoding="async" width="64" height="64" class="size-full rounded-sm object-cover">
+                                        </button>
+                                    @endforeach
+                                </div>
+                                <button type="button" x-on:click="selectPhoto(imageIndex + 1)" x-bind:disabled="imageIndex === current.images.length - 1" aria-label="{{ __('Next photo') }}" class="grid size-10 place-items-center rounded-full border border-sand-200 bg-white hover:border-maroon-700 disabled:opacity-35">
+                                    <x-icon name="chevron-end" class="size-5 rtl:rotate-180" />
+                                </button>
                             </div>
                         @endif
                     </div>
@@ -125,6 +144,7 @@
                     </p>
                 </div>
 
+                @if ($selectedColor->hasColor())
                 <fieldset>
                     <legend class="text-sm">{{ __('Color') }}: <span class="font-semibold" x-text="current.name">{{ $selectedColor->displayName() }}</span></legend>
                     <div class="mt-3 flex flex-wrap gap-3">
@@ -150,6 +170,7 @@
                         @endforeach
                     </div>
                 </fieldset>
+                @endif
 
                 <fieldset id="size-picker" class="scroll-mt-24">
                     <div class="flex items-center justify-between gap-3">
@@ -294,7 +315,13 @@
             <div class="flex items-center gap-3">
                 <div class="min-w-0 flex-1">
                     <p class="truncate text-sm font-semibold" x-text="selected ? selected.price : priceText">{{ $priceText }}</p>
-                    <p class="truncate text-xs text-ink-500"><span x-text="current.name">{{ $selectedColor->displayName() }}</span><span x-show="size"> · <span x-text="sizeName(size)"></span></span></p>
+                    <p class="truncate text-xs text-ink-500">
+                        @if ($selectedColor->hasColor())
+                            <span x-text="current.name">{{ $selectedColor->displayName() }}</span>
+                            <span x-show="size"> · </span>
+                        @endif
+                        <span x-show="size" x-text="sizeName(size)"></span>
+                    </p>
                 </div>
                 <x-store.button size="md" x-on:click="addToBag()" x-bind:disabled="adding">{{ __('Add to bag') }}</x-store.button>
             </div>

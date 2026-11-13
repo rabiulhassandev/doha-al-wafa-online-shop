@@ -59,7 +59,7 @@
                 <tr>
                     <td class="py-3">
                         <p class="font-medium">{{ $item->translated('product_name') }}</p>
-                        <p class="text-xs text-ink-500">{{ $item->translated('color_name') }} · {{ __('Size :size', ['size' => $item->translated('size_name')]) }} · <span dir="ltr">{{ $item->sku }}</span></p>
+                        <p class="text-xs text-ink-500">@if (filled($item->color_name_en)){{ $item->translated('color_name') }} · @endif{{ __('Size :size', ['size' => $item->translated('size_name')]) }} · <span dir="ltr">{{ $item->sku }}</span></p>
                     </td>
                     <td class="py-3 text-end tabular-nums">{{ $item->quantity }}</td>
                     <td class="py-3 text-end whitespace-nowrap tabular-nums">{{ Money::format($item->unit_price, $locale) }}</td>

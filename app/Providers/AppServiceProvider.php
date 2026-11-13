@@ -4,17 +4,21 @@ namespace App\Providers;
 
 use App\Models\User;
 use App\Services\Settings;
+use App\Support\CanonicalUrl;
 use App\Support\QatarPhone;
 use App\View\Composers\AccountWishlistComposer;
 use App\View\Composers\AdminNavigationComposer;
 use App\View\Composers\CartCountComposer;
 use App\View\Composers\StoreNavigationComposer;
+use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
@@ -57,12 +61,18 @@ class AppServiceProvider extends ServiceProvider
 
         $this->configureOrderRateLimits();
 
+        Event::listen(Login::class, function (Login $event): void {
+            if ($event->guard === 'web' && request()->hasSession()) {
+                request()->session()->put('password_hash_web', Auth::guard('web')->hashPasswordForCookie($event->user->getAuthPassword()));
+            }
+        });
+
         // Password reset emails link to the store's own page, in the language the customer last used.
         ResetPassword::toMailUsing(fn (User $user, string $token): MailMessage => (new MailMessage)
             ->subject(__('Choose a new password'))
             ->view('mail.reset-password', [
                 'user' => $user,
-                'url' => route('account.password.reset', ['locale' => $user->preferredLocale(), 'token' => $token, 'email' => $user->email]),
+                'url' => CanonicalUrl::forPath(route('account.password.reset', ['locale' => $user->preferredLocale(), 'token' => $token, 'email' => $user->email], absolute: false)),
                 'minutes' => config('auth.passwords.users.expire'),
             ]));
 

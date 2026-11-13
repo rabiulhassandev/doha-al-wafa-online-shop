@@ -89,7 +89,7 @@ Route::prefix('{locale}')
                 Route::get('register', [RegisteredUserController::class, 'create'])->name('register');
                 Route::post('register', [RegisteredUserController::class, 'store'])->middleware('throttle:5,10')->name('register.store');
                 Route::get('login', [AuthenticatedSessionController::class, 'create'])->name('login');
-                Route::post('login', [AuthenticatedSessionController::class, 'store'])->name('login.store');
+                Route::post('login', [AuthenticatedSessionController::class, 'store'])->middleware('throttle:60,1')->name('login.store');
                 Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])->name('password.request');
                 Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])->middleware('throttle:5,10')->name('password.email');
                 Route::get('reset-password/{token}', [NewPasswordController::class, 'create'])->name('password.reset');
@@ -101,7 +101,11 @@ Route::prefix('{locale}')
                 Route::get('/', [AccountOrderController::class, 'index'])->name('orders');
                 Route::get('orders/{order:number}', [AccountOrderController::class, 'show'])->name('orders.show');
                 Route::get('profile', [ProfileController::class, 'edit'])->name('profile.edit');
-                Route::put('profile', [ProfileController::class, 'update'])->name('profile.update');
+                Route::put('profile', [ProfileController::class, 'update'])->middleware('throttle:10,1')->name('profile.update');
+                Route::middleware(['signed:relative', 'throttle:10,1'])->group(function (): void {
+                    Route::get('profile/email/{token}', [ProfileController::class, 'showEmailConfirmation'])->name('profile.email.show');
+                    Route::post('profile/email/{token}', [ProfileController::class, 'confirmEmail'])->name('profile.email.confirm');
+                });
                 Route::put('password', [PasswordController::class, 'update'])->name('password.update');
                 Route::get('addresses', [AddressController::class, 'index'])->name('addresses.index');
                 Route::post('addresses', [AddressController::class, 'store'])->name('addresses.store');

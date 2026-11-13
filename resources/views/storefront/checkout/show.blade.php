@@ -99,7 +99,7 @@
                     <div class="mt-5 grid gap-5">
                         <x-store.text-field name="name" :label="__('Full name')" :value="$account['name'] ?? null" autocomplete="name" maxlength="120" required />
 
-                        <x-store.phone-field :label="__('Mobile number')" :value="$account['phone'] ?? null" :hint="__('We will call or WhatsApp you on this number to confirm your order.')" required />
+                        <x-store.phone-field :label="__('Phone number')" :value="$account['phone'] ?? null" :hint="__('Enter a Qatar mobile or landline number we can use to confirm your order.')" required />
                     </div>
                 </section>
 

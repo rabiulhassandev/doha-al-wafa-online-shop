@@ -10,7 +10,7 @@ use Symfony\Component\HttpFoundation\Response;
  * Browser safety headers on every response.
  *
  * There is no script allow-list (Content-Security-Policy "script-src"): Alpine needs "unsafe-eval" and the
- * ad pixels load from several hosts, so such a list would protect little. Framing is limited instead.
+ * ad pixels load from several hosts. Restrict framing, base URLs, form targets and embedded objects.
  */
 class SecurityHeaders
 {
@@ -22,7 +22,7 @@ class SecurityHeaders
         'Referrer-Policy' => 'strict-origin-when-cross-origin',
         // Only this site may show its pages in a frame (stops click-jacking of checkout and admin).
         'X-Frame-Options' => 'SAMEORIGIN',
-        'Content-Security-Policy' => "frame-ancestors 'self'",
+        'Content-Security-Policy' => "frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'",
         // Checkout's map pin uses the location; nothing uses the camera, microphone or payment sheet yet.
         'Permissions-Policy' => 'camera=(), microphone=(), geolocation=(self), payment=(), usb=()',
     ];

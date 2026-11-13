@@ -62,7 +62,7 @@ class ProductController extends Controller
     }
 
     /**
-     * Create a product, then continue to its colors.
+     * Create a product, then continue to its photos and optional colors.
      */
     public function store(ProductRequest $request): RedirectResponse
     {
@@ -74,12 +74,13 @@ class ProductController extends Controller
             }
 
             $product->collections()->sync($request->collectionIds());
+            $product->colors()->create(['color_id' => null, 'is_default' => true]);
 
             return $product;
         });
 
         return to_route('admin.products.colors.index', $product)
-            ->with('status', "“{$product->name_en}” was created. Now add its colors and photos.");
+            ->with('status', "“{$product->name_en}” was created. Add photos and choose colors if needed.");
     }
 
     /**

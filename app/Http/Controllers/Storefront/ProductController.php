@@ -46,7 +46,7 @@ class ProductController extends Controller
         abort_if($colors->isEmpty(), 404);
         abort_if($isPreview && ! $request->user()?->can('manage-catalog'), 404);
 
-        $selectedColor = $colors->first(fn (ProductColor $productColor): bool => $productColor->color->slug === $request->query('color'))
+        $selectedColor = $colors->first(fn (ProductColor $productColor): bool => $productColor->color?->slug === $request->query('color'))
             ?? $product->displayColor();
         $sizes = $this->offeredSizes($colors);
         $requestedSize = (string) $request->query('size');
@@ -129,11 +129,11 @@ class ProductController extends Controller
             'maxQuantity' => (int) $this->settings->get('max_quantity_per_item'),
             'productName' => $product->translated('name'),
             'url' => route('products.show', $product),
-            'color' => $selectedColor->color->slug,
+            'color' => $selectedColor->color?->slug ?? '',
             'size' => $selectedSizeSlug,
             'sizes' => $sizes->map(fn (Size $size): array => ['slug' => $size->slug, 'name' => $size->translated('name')])->values(),
             'colors' => $colors->mapWithKeys(fn (ProductColor $productColor): array => [
-                $productColor->color->slug => [
+                ($productColor->color?->slug ?? '') => [
                     'name' => $productColor->displayName(),
                     'images' => $productColor->images->map(fn (ProductImage $image): array => [
                         'src' => $image->url(1200),

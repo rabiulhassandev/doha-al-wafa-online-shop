@@ -188,7 +188,7 @@ describe('link previews', function () {
     it('describes other pages with the store name and language', function () {
         $this->get(route('home', ['locale' => 'ar']))
             ->assertOk()
-            ->assertSee('<meta property="og:site_name" content="Doha AL WAFA">', false)
+            ->assertSee('<meta property="og:site_name" content="BANAT AL WAFA">', false)
             ->assertSee('<meta property="og:type" content="website">', false)
             ->assertSee('<meta property="og:locale" content="ar_AR">', false)
             ->assertSee('<meta property="og:locale:alternate" content="en_US">', false);

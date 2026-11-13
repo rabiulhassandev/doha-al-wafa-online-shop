@@ -37,11 +37,17 @@ class ProfileRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
+        $rules = [
             'name' => ['required', 'string', 'max:120'],
             'email' => ['required', 'string', 'email', 'max:190', Rule::unique('users', 'email')->ignore($this->user())],
             'phone' => ['required', 'string', QatarPhoneNumber::mobile()],
         ];
+
+        if ($this->input('email') !== $this->user()->email) {
+            $rules['current_password'] = ['required', 'string', 'max:100', 'current_password'];
+        }
+
+        return $rules;
     }
 
     /**
@@ -56,6 +62,8 @@ class ProfileRequest extends FormRequest
             'name.max' => __('Please shorten this to :max characters.'),
             'email.unique' => __('Another account already uses this email.'),
             'email' => __('Enter a valid email address.'),
+            'current_password.required' => __('Enter your current password to change your email.'),
+            'current_password.current_password' => __('This is not your current password.'),
             'phone' => __('Enter a Qatar mobile number with 8 digits.'),
         ];
     }

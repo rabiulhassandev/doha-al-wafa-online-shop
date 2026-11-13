@@ -9,7 +9,7 @@ function assertSafetyHeaders(TestResponse $response): void
         ->assertHeader('X-Content-Type-Options', 'nosniff')
         ->assertHeader('Referrer-Policy', 'strict-origin-when-cross-origin')
         ->assertHeader('X-Frame-Options', 'SAMEORIGIN')
-        ->assertHeader('Content-Security-Policy', "frame-ancestors 'self'")
+        ->assertHeader('Content-Security-Policy', "frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'")
         ->assertHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(self), payment=(), usb=()');
 }
 

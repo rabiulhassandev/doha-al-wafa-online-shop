@@ -1,4 +1,4 @@
-{{-- "Track your order": the order number and mobile number open the order's page. --}}
+{{-- "Track your order": the order number and phone number open the order's page. --}}
 @push('head')
     <meta name="robots" content="noindex">
 @endpush
@@ -7,7 +7,7 @@
     <div class="page-container py-10">
         <div class="mx-auto max-w-md">
             <h1 class="font-display text-3xl sm:text-4xl">{{ __('Track your order') }}</h1>
-            <p class="mt-2 text-ink-700">{{ __('Enter your order number and the mobile number you ordered with.') }}</p>
+            <p class="mt-2 text-ink-700">{{ __('Enter your order number and the phone number you ordered with.') }}</p>
 
             <form method="POST" action="{{ route('track.lookup') }}" class="mt-6 grid gap-5 rounded-2xl bg-white p-5 sm:p-6">
                 @csrf
@@ -21,7 +21,7 @@
                     dir="ltr"
                 />
 
-                <x-store.phone-field :label="__('Mobile number')" required />
+                <x-store.phone-field :label="__('Phone number')" required />
 
                 <x-store.button type="submit" size="lg" class="w-full">{{ __('Track order') }}</x-store.button>
             </form>

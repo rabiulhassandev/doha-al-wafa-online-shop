@@ -1,6 +1,6 @@
 @props(['name' => 'phone', 'label', 'hint' => null, 'value' => null])
 
-{{-- A Qatar mobile number input with a fixed +974 prefix, its hint and error message. Other attributes go on the input. --}}
+{{-- A Qatar phone number input with a fixed +974 prefix, its hint and error message. Other attributes go on the input. --}}
 @php
     $hasError = $errors->has($name);
     $describedBy = collect([$hint ? "{$name}-hint" : null, $hasError ? "{$name}-error" : null])->filter()->implode(' ');

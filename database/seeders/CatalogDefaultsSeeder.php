@@ -5,13 +5,12 @@ namespace Database\Seeders;
 use App\Enums\SizeGroup;
 use App\Models\Category;
 use App\Models\Collection;
-use App\Models\Color;
 use App\Models\Size;
 use App\Models\SizeGuide;
 use Illuminate\Database\Seeder;
 
 /**
- * Starter catalog data the owner can edit: categories, collections, a color palette, sizes and a sample size guide.
+ * Starter catalog data the owner can edit: categories, collections, sizes and a sample size guide.
  *
  * Safe to run more than once: existing rows (matched by URL name) are left as the owner edited them. Run on a live store with
  * "php artisan db:seed --class=CatalogDefaultsSeeder".
@@ -25,7 +24,6 @@ class CatalogDefaultsSeeder extends Seeder
     {
         $this->seedCategories();
         $this->seedCollections();
-        $this->seedColors();
         $this->seedSizes();
         $this->seedSizeGuide();
     }
@@ -34,7 +32,6 @@ class CatalogDefaultsSeeder extends Seeder
     {
         $categories = [
             ['slug' => 'women', 'name_en' => 'Women', 'name_ar' => 'نساء'],
-            ['slug' => 'men', 'name_en' => 'Men', 'name_ar' => 'رجال'],
             ['slug' => 'kids', 'name_en' => 'Kids', 'name_ar' => 'أطفال'],
         ];
 
@@ -58,37 +55,6 @@ class CatalogDefaultsSeeder extends Seeder
             Collection::query()->firstOrCreate(
                 ['slug' => $collection['slug']],
                 [...$collection, 'sort_order' => ($index + 1) * 10],
-            );
-        }
-    }
-
-    private function seedColors(): void
-    {
-        $colors = [
-            ['black', 'Black', 'أسود', '#111111'],
-            ['white', 'White', 'أبيض', '#ffffff'],
-            ['ivory', 'Ivory', 'عاجي', '#f2ebdd'],
-            ['beige', 'Beige', 'بيج', '#d9c4a3'],
-            ['camel', 'Camel', 'جملي', '#b8865b'],
-            ['brown', 'Brown', 'بني', '#6b4a35'],
-            ['grey', 'Grey', 'رمادي', '#8c8c8c'],
-            ['navy', 'Navy', 'كحلي', '#1f2a44'],
-            ['royal-blue', 'Royal blue', 'أزرق ملكي', '#2b4ba1'],
-            ['sky-blue', 'Sky blue', 'سماوي', '#8db8de'],
-            ['emerald', 'Emerald', 'زمردي', '#1e6b52'],
-            ['olive', 'Olive', 'زيتي', '#5b6b3a'],
-            ['maroon', 'Maroon', 'عنابي', '#6e1e2e'],
-            ['red', 'Red', 'أحمر', '#b3202a'],
-            ['rose', 'Rose', 'وردي', '#d9a0a8'],
-            ['lilac', 'Lilac', 'ليلكي', '#b9a2cf'],
-            ['purple', 'Purple', 'بنفسجي', '#5e3a7e'],
-            ['gold', 'Gold', 'ذهبي', '#c9a44c'],
-        ];
-
-        foreach ($colors as $index => [$slug, $nameEn, $nameAr, $hex]) {
-            Color::query()->firstOrCreate(
-                ['slug' => $slug],
-                ['name_en' => $nameEn, 'name_ar' => $nameAr, 'hex' => $hex, 'sort_order' => ($index + 1) * 10],
             );
         }
     }

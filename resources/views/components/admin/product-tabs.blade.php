@@ -3,7 +3,7 @@
 @php
     $tabs = [
         'details' => ['label' => 'Details', 'url' => route('admin.products.edit', $product)],
-        'colors' => ['label' => 'Colors & photos', 'url' => route('admin.products.colors.index', $product)],
+        'colors' => ['label' => 'Photos & colors', 'url' => route('admin.products.colors.index', $product)],
         'stock' => ['label' => 'Sizes & stock', 'url' => route('admin.products.stock.edit', $product)],
     ];
     $setupIssues = $product->relationLoaded('colors') && $product->relationLoaded('variants') ? $product->setupIssues() : [];

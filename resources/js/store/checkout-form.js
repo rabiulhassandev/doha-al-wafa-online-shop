@@ -1,24 +1,31 @@
 /**
  * Checkout form: the delivery fee and total follow the chosen area, the shopper can share their
- * location, and a draft is kept in the browser because in-app browsers often reload pages.
+ * location, and the selected delivery area survives a reload in the same tab.
  * The server works out every amount again when the order is placed.
  */
 const DRAFT_KEY = 'checkout-draft';
-const DRAFT_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
-const DRAFT_FIELDS = ['name', 'phone', 'email', 'delivery_zone_id', 'zone_number', 'street_number', 'building_number', 'unit', 'landmark', 'note'];
+const DRAFT_MAX_AGE_MS = 30 * 60 * 1000;
+
+export function clearLegacyCheckoutDraft() {
+    try {
+        window.localStorage.removeItem(DRAFT_KEY);
+    } catch {
+        // Storage may be unavailable in an in-app browser.
+    }
+}
 
 function readDraft() {
     try {
-        const draft = JSON.parse(window.localStorage.getItem(DRAFT_KEY) ?? 'null');
-
-        if (!draft || typeof draft.fields !== 'object' || Date.now() - draft.savedAt > DRAFT_MAX_AGE_MS) {
-            return null;
+        const draft = JSON.parse(window.sessionStorage.getItem(DRAFT_KEY) ?? 'null');
+        if (typeof draft?.zoneId === 'string' && Number.isFinite(draft.savedAt) && Date.now() - draft.savedAt <= DRAFT_MAX_AGE_MS) {
+            return draft.zoneId;
         }
-
-        return draft.fields;
     } catch {
-        return null;
+        // Corrupt or unavailable storage is handled like an expired draft.
     }
+
+    forgetCheckoutDraft();
+    return null;
 }
 
 /**
@@ -26,7 +33,7 @@ function readDraft() {
  */
 export function forgetCheckoutDraft() {
     try {
-        window.localStorage.removeItem(DRAFT_KEY);
+        window.sessionStorage.removeItem(DRAFT_KEY);
     } catch {
         // Storage is unavailable, so there is no draft to drop.
     }
@@ -67,32 +74,12 @@ export default (data) => ({
     },
 
     /**
-     * Fill empty fields from the saved draft. Fields the page already filled are left alone.
+     * Restore the delivery area when the page did not already select one.
      */
     applyDraft() {
-        const fields = readDraft();
-
-        if (!fields) {
-            return;
-        }
-
-        for (const name of DRAFT_FIELDS) {
-            const field = this.$root.elements.namedItem(name);
-            const value = fields[name];
-
-            if (!field || typeof value !== 'string' || value === '' || field.value !== '') {
-                continue;
-            }
-
-            if (name === 'delivery_zone_id') {
-                if (value in this.zones) {
-                    this.zoneId = value;
-                }
-
-                continue;
-            }
-
-            field.value = value;
+        const zoneId = readDraft();
+        if (!this.zoneId && zoneId !== null && Object.hasOwn(this.zones, zoneId)) {
+            this.zoneId = zoneId;
         }
     },
 
@@ -126,20 +113,10 @@ export default (data) => ({
     },
 
     saveDraft() {
-        const fields = {};
-
-        for (const name of DRAFT_FIELDS) {
-            const field = this.$root.elements.namedItem(name);
-
-            if (field) {
-                fields[name] = field.value;
-            }
-        }
-
         try {
-            window.localStorage.setItem(DRAFT_KEY, JSON.stringify({ savedAt: Date.now(), fields }));
+            window.sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ savedAt: Date.now(), zoneId: String(this.zoneId) }));
         } catch {
-            // Storage is unavailable; the form just won't be remembered.
+            // Storage is unavailable, so the selected area won't be remembered.
         }
     },
 

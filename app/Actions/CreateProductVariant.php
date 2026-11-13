@@ -28,11 +28,11 @@ class CreateProductVariant
      */
     private function uniqueSku(ProductColor $productColor, Size $size): string
     {
-        $base = Str::upper(implode('-', [
+        $base = Str::upper(implode('-', array_filter([
             $productColor->product->code,
-            $productColor->color->slug,
+            $productColor->color?->slug,
             $size->slug,
-        ]));
+        ], fn (?string $part): bool => $part !== null)));
         $base = Str::limit($base, 54, '');
         $sku = $base;
 

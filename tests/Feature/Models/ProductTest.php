@@ -6,10 +6,10 @@ use App\Models\ProductColor;
 use App\Models\ProductImage;
 use App\Models\ProductVariant;
 
-it('needs a color before anything else', function () {
+it('needs a gallery before choosing photos and stock', function () {
     $product = Product::factory()->create()->load(['colors.color', 'colors.images', 'variants']);
 
-    expect($product->setupIssues())->toBe(['Add at least one color.']);
+    expect($product->setupIssues())->toBe(['Set up product photos or enable a color.']);
 });
 
 it('lists colors without photos and missing sizes', function () {

@@ -50,7 +50,7 @@ it('lists every color and size as its own item, grouped by product', function ()
         'condition' => 'new',
         'price' => '185.00 QAR',
         'sale_price' => '',
-        'brand' => 'Doha AL WAFA',
+        'brand' => 'BANAT AL WAFA',
         'google_product_category' => 'Apparel & Accessories > Clothing',
     ]);
     expect($navy56['link'])->toBe(route('products.show', ['locale' => 'en', 'product' => $product, 'color' => 'navy', 'size' => '56', 'utm_source' => 'meta', 'utm_medium' => 'catalog']));
@@ -64,6 +64,19 @@ it('shows a sale with the old price as the price', function () {
     $row = feedRows($this->get('/feeds/meta.csv')->getContent())[0];
 
     expect([$row['price'], $row['sale_price']])->toBe(['200.00 QAR', '150.00 QAR']);
+});
+
+it('lists an item sold by size with an empty color and a size-only link', function () {
+    $product = listedProduct();
+    $product->colors()->sole()->update(['color_id' => null]);
+
+    [$row] = feedRows($this->get('/feeds/meta.csv')->assertOk()->getContent());
+
+    expect($row['color'])->toBe('')
+        ->and($row['size'])->toBe('56')
+        ->and($row['link'])->toBe(route('products.show', [
+            'locale' => 'en', 'product' => $product, 'size' => '56', 'utm_source' => 'meta', 'utm_medium' => 'catalog',
+        ]));
 });
 
 it('leaves out products shoppers cannot see and sizes no longer sold', function () {
@@ -101,7 +114,7 @@ it('needs the feed password once the owner sets one', function () {
 
     $this->get('/feeds/meta.csv')->assertNotFound();
     $this->get('/feeds/meta.csv?token=wrong-token')->assertNotFound();
-    $this->get('/feeds/meta.csv?token=secret-feed-123')->assertOk();
+    $this->get('/feeds/meta.csv?token=secret-feed-123')->assertOk()->assertHeader('Cache-Control', 'no-store, private');
 });
 
 it('has feeds for Meta and TikTok only', function () {

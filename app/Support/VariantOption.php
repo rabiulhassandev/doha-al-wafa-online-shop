@@ -17,7 +17,7 @@ final class VariantOption
     {
         return [
             'id' => $variant->id,
-            'label' => "{$variant->product->name_en} · {$variant->productColor->nameEn()} · {$variant->size->name_en}",
+            'label' => implode(' · ', array_filter([$variant->product->name_en, $variant->productColor->displayName('en'), $variant->size->name_en])),
             'sku' => $variant->sku,
             'price' => Money::format($variant->effectivePrice()),
             'stock' => $variant->stock,

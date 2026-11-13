@@ -23,6 +23,44 @@ describe('index', function () {
 });
 
 describe('store', function () {
+    it('can assign and remove the only color without losing photos or stock', function () {
+        $product = Product::factory()->create();
+        $navy = Color::factory()->create(['name_en' => 'Navy']);
+        $this->actingAs(User::factory()->staff()->create());
+
+        $this->post(route('admin.products.without-color', $product))->assertRedirect();
+        $this->post(route('admin.products.without-color', $product))->assertRedirect();
+        $gallery = $product->colors()->sole();
+        $image = ProductImage::factory()->for($gallery)->create();
+        $variant = ProductVariant::factory()->for($gallery)->inStock(4)->create();
+
+        $this->get(route('admin.products.colors.index', $product))
+            ->assertOk()
+            ->assertSee('Product photos')
+            ->assertSee('Assign color to photos and stock');
+
+        $this->post(route('admin.products.colors.store', $product), ['color_id' => $navy->id])->assertRedirect();
+        expect($product->colors()->sole()->color_id)->toBe($navy->id);
+
+        $this->post(route('admin.products.without-color', $product))->assertRedirect();
+        expect($product->colors()->sole()->id)->toBe($gallery->id);
+        expect($gallery->fresh()->color_id)->toBeNull();
+        expect($gallery->images()->sole()->id)->toBe($image->id);
+        expect($gallery->variants()->sole()->id)->toBe($variant->id);
+        expect($variant->fresh()->stock)->toBe(4);
+    });
+
+    it('requires an explicit choice of stock before switching a multicolor product', function () {
+        $product = Product::factory()->create();
+        ProductColor::factory()->count(2)->for($product)->create();
+
+        $this->actingAs(User::factory()->staff()->create())
+            ->post(route('admin.products.without-color', $product))
+            ->assertSessionHasErrors('color_id');
+
+        expect($product->colors()->whereNotNull('color_id')->count())->toBe(2);
+    });
+
     it('makes the first color the one shown first', function () {
         $product = Product::factory()->create();
         $navy = Color::factory()->create(['name_en' => 'Navy']);
@@ -38,7 +76,7 @@ describe('store', function () {
 
     it('adds the sizes the product already sells to a new color', function () {
         $product = Product::factory()->create(['code' => 'DW0001']);
-        $navy = ProductColor::factory()->for($product)->shownFirst()->create();
+        $navy = ProductColor::factory()->for($product)->for(Color::factory()->state(['slug' => 'navy']))->shownFirst()->create();
         $size56 = Size::factory()->create(['slug' => '56']);
         ProductVariant::factory()->for($navy)->for($product)->for($size56)->create();
         ProductVariant::factory()->for($navy)->for($product)->notOffered()->create();

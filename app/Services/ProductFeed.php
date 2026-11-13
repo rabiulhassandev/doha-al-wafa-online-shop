@@ -98,7 +98,7 @@ class ProductFeed
             route('products.show', [
                 'locale' => $locale,
                 'product' => $product,
-                'color' => $productColor->color->slug,
+                'color' => $productColor->color?->slug,
                 'size' => $variant->size->slug,
                 'utm_source' => $platform,
                 'utm_medium' => 'catalog',
@@ -106,7 +106,7 @@ class ProductFeed
             $images->first()->url(1200),
             $images->skip(1)->take(self::MAX_ADDITIONAL_IMAGES)->map(fn (ProductImage $image): string => $image->url(1200))->implode(','),
             (string) $this->settings->get('store_name'),
-            $productColor->displayName($locale),
+            $productColor->displayName($locale) ?? '',
             (string) $variant->size->translated('name', $locale),
             self::GOOGLE_PRODUCT_CATEGORY,
             (string) $product->category?->translated('name', $locale),

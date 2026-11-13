@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\User;
+use Illuminate\Mail\Events\MessageSending;
 
 describe('my orders', function () {
     it('lists only the orders placed from this account', function () {
@@ -39,15 +40,39 @@ describe('my orders', function () {
 });
 
 describe('my details', function () {
-    it('saves the name, email and mobile number', function () {
+    it('saves the name and mobile number with the existing email', function () {
         $user = User::factory()->create();
 
         $this->actingAs($user)
-            ->put(route('account.profile.update', ['locale' => 'en']), ['name' => 'Fatima K.', 'email' => 'New@Example.com', 'phone' => '+974 6666 1234'])
+            ->put(route('account.profile.update', ['locale' => 'en']), ['name' => 'Fatima K.', 'email' => $user->email, 'phone' => '+974 6666 1234'])
             ->assertRedirect(route('account.profile.edit', ['locale' => 'en']));
 
         $user->refresh();
-        expect([$user->name, $user->email, $user->phone])->toBe(['Fatima K.', 'new@example.com', '+97466661234']);
+        expect([$user->name, $user->phone])->toBe(['Fatima K.', '+97466661234']);
+    });
+
+    it('changes the recovery email after a password check and confirmation', function () {
+        $user = User::factory()->create(['email' => 'old@example.com', 'password' => 'current-password-1']);
+        $profile = route('account.profile.update', ['locale' => 'en']);
+        $details = ['name' => 'Fatima', 'email' => 'New@Example.com', 'phone' => '5555 1234'];
+        $messages = [];
+        Event::listen(MessageSending::class, function (MessageSending $event) use (&$messages): void {
+            $messages[] = $event->message;
+        });
+
+        $this->actingAs($user)->put($profile, $details)->assertSessionHasErrors('current_password');
+        $this->put($profile, $details + ['current_password' => 'current-password-1'])->assertSessionHasNoErrors();
+
+        expect($user->fresh()->email)->toBe('old@example.com');
+        expect($messages[0]->getTo()[0]->getAddress())->toBe('new@example.com');
+        preg_match('~https?://\S+~', $messages[0]->getTextBody(), $links);
+        $this->get($links[0])->assertOk();
+        expect($user->fresh()->email)->toBe('old@example.com');
+
+        $this->post($links[0])->assertRedirect(route('account.profile.edit', ['locale' => 'en']));
+        expect($user->fresh()->email)->toBe('new@example.com');
+        expect($messages[1]->getTo()[0]->getAddress())->toBe('old@example.com');
+        $this->post($links[0])->assertForbidden();
     });
 
     it('keeps emails unique', function () {

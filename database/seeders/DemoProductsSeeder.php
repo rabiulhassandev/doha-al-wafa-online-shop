@@ -9,7 +9,6 @@ use App\Enums\ProductStatus;
 use App\Enums\StockMovementReason;
 use App\Models\Category;
 use App\Models\Collection;
-use App\Models\Color;
 use App\Models\Product;
 use App\Models\Size;
 use App\Models\SizeGuide;
@@ -36,22 +35,22 @@ class DemoProductsSeeder extends Seeder
         $products = [
             [
                 'name_en' => 'Classic crepe jelabiya', 'name_ar' => 'جلابية كريب كلاسيكية', 'category' => 'women',
-                'price' => 185, 'compare_at_price' => 220, 'colors' => ['navy', 'olive', 'rose'], 'sizes' => ['52', '54', '56', '58'],
+                'price' => 185, 'compare_at_price' => 220, 'sizes' => ['52', '54', '56', '58'],
                 'collections' => ['new-arrivals', 'best-sellers'], 'featured' => true,
             ],
             [
                 'name_en' => 'Embroidered Eid kaftan', 'name_ar' => 'قفطان العيد المطرز', 'category' => 'women',
-                'price' => 320, 'compare_at_price' => null, 'colors' => ['maroon', 'emerald', 'ivory'], 'sizes' => ['54', '56', '58', '60'],
+                'price' => 320, 'compare_at_price' => null, 'sizes' => ['54', '56', '58', '60'],
                 'collections' => ['eid'], 'featured' => true,
             ],
             [
-                'name_en' => 'Everyday cotton jelabiya', 'name_ar' => 'جلابية قطن يومية', 'category' => 'men',
-                'price' => 145, 'compare_at_price' => null, 'colors' => ['white', 'beige', 'grey'], 'sizes' => ['s', 'm', 'l', 'xl'],
+                'name_en' => 'Everyday cotton jelabiya', 'name_ar' => 'جلابية قطن يومية', 'category' => 'kids',
+                'price' => 145, 'compare_at_price' => null, 'sizes' => ['s', 'm', 'l', 'xl'],
                 'collections' => ['new-arrivals'], 'featured' => false,
             ],
             [
                 'name_en' => 'Girls festive jelabiya', 'name_ar' => 'جلابية بناتي للمناسبات', 'category' => 'kids',
-                'price' => 95, 'compare_at_price' => null, 'colors' => ['lilac', 'gold'], 'sizes' => ['free-size'],
+                'price' => 95, 'compare_at_price' => null, 'sizes' => ['free-size'],
                 'collections' => ['eid'], 'featured' => false,
             ],
         ];
@@ -86,47 +85,41 @@ class DemoProductsSeeder extends Seeder
 
             $sizes = Size::query()->whereIn('slug', $data['sizes'])->ordered()->get();
 
-            foreach ($data['colors'] as $position => $colorSlug) {
-                $color = Color::query()->where('slug', $colorSlug)->firstOrFail();
-                $productColor = $product->colors()->create([
-                    'color_id' => $color->id,
-                    'sort_order' => ($position + 1) * 10,
-                    'is_default' => $position === 0,
-                ]);
+            $gallery = $product->colors()->create(['color_id' => null, 'is_default' => true]);
 
-                foreach ([0, 1] as $photo) {
-                    $directory = "products/{$product->id}/".Str::lower(Str::random(24));
-                    $photoPath = $this->placeholderPhoto($color->hex, $photo);
+            foreach ([0, 1] as $photo) {
+                $directory = "products/{$product->id}/".Str::lower(Str::random(24));
+                $photoPath = $this->placeholderPhoto($photo);
 
-                    $productColor->images()->create([
+                try {
+                    $gallery->images()->create([
                         'directory' => $directory,
                         'widths' => $this->images->storeProductImage($photoPath, $directory, ImageFocus::Center),
                         'focus' => ImageFocus::Center,
                         'sort_order' => ($photo + 1) * 10,
                     ]);
-
+                } finally {
                     unlink($photoPath);
                 }
+            }
 
-                foreach ($sizes as $size) {
-                    $variant = $this->createVariant->handle($productColor, $size);
-                    $this->adjustStock->setTo($variant, fake()->randomElement([0, 1, 2, 4, 6, 9]), StockMovementReason::Recount, note: 'Demo data');
-                }
+            foreach ($sizes as $size) {
+                $variant = $this->createVariant->handle($gallery, $size);
+                $this->adjustStock->setTo($variant, fake()->randomElement([1, 2, 4, 6, 9]), StockMovementReason::Recount, note: 'Demo data');
             }
         }
     }
 
     /**
-     * Draw a placeholder garment photo in the given color and return its temporary file path.
+     * Draw a placeholder garment photo and return its temporary file path.
      */
-    private function placeholderPhoto(string $hex, int $variation): string
+    private function placeholderPhoto(int $variation): string
     {
-        [$red, $green, $blue] = sscanf($hex, '#%02x%02x%02x');
         $canvas = imagecreatetruecolor(1200, 1500);
 
         imagefill($canvas, 0, 0, imagecolorallocate($canvas, 245, 239, 230));
 
-        $fabric = imagecolorallocate($canvas, $red, $green, $blue);
+        $fabric = imagecolorallocate($canvas, 104, 30, 54);
         $offset = $variation * 60;
         imagefilledpolygon($canvas, [430 + $offset, 220, 770 - $offset, 220, 980, 1380, 220, 1380], $fabric);
         imagefilledellipse($canvas, 600, 230, 260 - $offset, 120, $fabric);

@@ -89,7 +89,7 @@ describe('structured data', function () {
             'name' => 'Classic crepe jelabiya',
             'productGroupID' => 'JLB012',
             'url' => route('products.show', ['locale' => 'en', 'product' => $product]),
-            'brand' => ['@type' => 'Brand', 'name' => 'Doha AL WAFA'],
+            'brand' => ['@type' => 'Brand', 'name' => 'BANAT AL WAFA'],
         ]);
         expect($group['hasVariant'])->toHaveCount(2);
 
@@ -120,7 +120,7 @@ describe('structured data', function () {
         $data = structuredData($this->get(route('home', ['locale' => 'ar'])));
 
         expect($data['OnlineStore'])->toMatchArray([
-            'name' => 'Doha AL WAFA',
+            'name' => 'BANAT AL WAFA',
             'url' => route('home', ['locale' => 'ar']),
             'telephone' => '+97444441234',
             'sameAs' => ['https://www.instagram.com/dohaalwafa'],

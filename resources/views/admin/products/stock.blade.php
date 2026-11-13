@@ -3,9 +3,9 @@
 
     @if ($product->colors->isEmpty())
         <x-admin.card>
-            <p class="text-sm text-ink-500">Add at least one color before choosing sizes.</p>
+            <p class="text-sm text-ink-500">Set up product photos before choosing sizes.</p>
             <div class="mt-4">
-                <x-admin.button :href="route('admin.products.colors.index', $product)" size="sm">Add colors</x-admin.button>
+                <x-admin.button :href="route('admin.products.colors.index', $product)" size="sm">Set up photos</x-admin.button>
             </div>
         </x-admin.card>
     @else
@@ -38,7 +38,7 @@
                 @endif
             </x-admin.card>
 
-            <x-admin.card title="Stock" description="How many you have of each color in each size. Untick “Sell” for a combination you don't make.">
+            <x-admin.card title="Stock" description="Enter how many are available in each size. Untick “Sell” for any option you don't offer.">
                 @if ($gridErrors->isNotEmpty())
                     <ul class="mb-4 space-y-1 rounded-xl bg-danger-50 px-4 py-3 text-sm text-danger-700" role="alert">
                         @foreach ($gridErrors as $gridError)
@@ -53,7 +53,7 @@
                     <table class="min-w-full text-sm">
                         <thead>
                             <tr class="text-xs font-medium text-ink-500">
-                                <th scope="col" class="sticky start-0 z-10 bg-white px-5 py-2 text-start sm:px-6">Color</th>
+                                <th scope="col" class="sticky start-0 z-10 bg-white px-5 py-2 text-start sm:px-6">{{ $product->colors->first()->hasColor() ? 'Color' : 'Product' }}</th>
                                 @foreach ($sizes as $size)
                                     <th scope="col" x-show="sizes.includes({{ $size->id }})" class="px-2 py-2 text-center">{{ $size->name_en }}</th>
                                 @endforeach

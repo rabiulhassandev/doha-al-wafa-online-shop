@@ -27,9 +27,10 @@ class OrderNotPlacedException extends RuntimeException
     public static function notEnoughStock(CartLine $line): self
     {
         $variant = $line->variant;
-        $item = __(':product (:color, size :size)', [
+        $color = $variant->productColor->displayName();
+        $item = __($color === null ? ':product (size :size)' : ':product (:color, size :size)', [
             'product' => $variant->product->translated('name'),
-            'color' => $variant->productColor->displayName(),
+            'color' => $color ?? '',
             'size' => $variant->size->translated('name'),
         ]);
 

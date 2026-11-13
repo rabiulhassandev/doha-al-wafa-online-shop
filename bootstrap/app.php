@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Exceptions\InvalidSignatureException;
+use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\TokenMismatchException;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Route;
@@ -29,6 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(SecurityHeaders::class);
+        $middleware->web(append: [AuthenticateSession::class]);
         // Set in the browser by the cookie bar and the ad platforms' scripts, so they are not encrypted.
         $middleware->encryptCookies(except: ['tracking_consent', '_fbp', '_fbc', '_ttp']);
         // The admin panel and the store each have their own sign-in page, in the store's case per language.
@@ -45,6 +47,8 @@ return Application::configure(basePath: dirname(__DIR__))
             : route('account.orders', ['locale' => $storeLocale($request)]));
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->dontFlash(['feed_token', 'meta_capi_token', 'tiktok_events_token']);
+
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
@@ -73,7 +77,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 ? $previous
                 : ($isAdmin ? route('admin.login') : route('locale.redirect'));
             $redirect = redirect()->to($target)
-                ->withInput($request->except(['_token', 'password', 'password_confirmation', 'current_password']));
+                ->withInput($request->except(['_token', 'password', 'password_confirmation', 'current_password', 'feed_token', 'meta_capi_token', 'tiktok_events_token']));
 
             return $isAdmin
                 ? $redirect->with('error', 'This page was open for a while, so it was refreshed. Please try again.')

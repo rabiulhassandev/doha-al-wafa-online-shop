@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Storefront\Account;
 
+use App\Enums\UserRole;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -66,7 +67,11 @@ class LoginRequest extends FormRequest
             ]);
         }
 
-        if (! Auth::attempt(['email' => Str::lower($this->string('email')), 'password' => $this->string('password')], $this->boolean('remember'))) {
+        if (! Auth::attempt([
+            'email' => Str::lower($this->string('email')),
+            'password' => $this->string('password'),
+            'role' => UserRole::Customer->value,
+        ], $this->boolean('remember'))) {
             RateLimiter::hit($key);
 
             throw ValidationException::withMessages([

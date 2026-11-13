@@ -99,6 +99,7 @@ describe('index', function () {
             ->toStartWith("\xEF\xBB\xBF")
             ->toContain("{$order->number},")
             ->toContain('فاطمة')
+            ->toContain(",'+97455551234,")
             ->toContain(',210');
     });
 

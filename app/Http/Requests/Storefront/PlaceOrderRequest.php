@@ -20,6 +20,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
+use Ramsey\Uuid\Uuid;
 
 class PlaceOrderRequest extends FormRequest
 {
@@ -57,7 +58,7 @@ class PlaceOrderRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:120'],
-            'phone' => ['required', 'string', QatarPhoneNumber::mobile()],
+            'phone' => ['required', 'string', new QatarPhoneNumber],
             'email' => ['nullable', 'string', 'email', 'max:190'],
             'delivery_zone_id' => ['required', 'integer', Rule::exists('delivery_zones', 'id')->where('is_active', true)],
             'zone_number' => ['required', 'regex:/^\d{1,4}$/'],
@@ -117,7 +118,7 @@ class PlaceOrderRequest extends FormRequest
         return [
             'name.required' => __('Enter your full name.'),
             'name.max' => $tooLong,
-            'phone' => __('Enter a Qatar mobile number with 8 digits.'),
+            'phone' => __('Enter a Qatar phone number with 8 digits.'),
             'email' => __('Enter a valid email address, or leave it empty.'),
             'delivery_zone_id' => __('Choose your area.'),
             'zone_number' => __('Enter the zone number from the blue plate.'),
@@ -139,7 +140,7 @@ class PlaceOrderRequest extends FormRequest
     /**
      * Get the checked checkout details.
      */
-    public function details(): CheckoutDetails
+    public function details(string $checkoutToken): CheckoutDetails
     {
         $preferredDate = $this->preferredDateEnabled() ? $this->validated('preferred_delivery_date') : null;
 
@@ -159,7 +160,7 @@ class PlaceOrderRequest extends FormRequest
             note: $this->validated('note'),
             paymentMethod: PaymentMethod::from($this->validated('payment_method')),
             locale: app()->getLocale(),
-            checkoutToken: $this->validated('checkout_token'),
+            checkoutToken: $checkoutToken,
             ipAddress: $this->ip(),
             userAgent: Str::limit((string) $this->userAgent(), 250, ''),
             couponCode: $this->session()->get(CartService::COUPON_SESSION_KEY),
@@ -168,6 +169,14 @@ class PlaceOrderRequest extends FormRequest
             adTrackingAllowed: app(Tracking::class)->allowedFor($this),
             trackingIds: app(Tracking::class)->browserIds($this),
         );
+    }
+
+    public function checkoutToken(): string
+    {
+        // The browser's UUID identifies a retry only within its original session and account.
+        $scope = $this->session()->token().':'.$this->user()?->getAuthIdentifier();
+
+        return Uuid::uuid5(Uuid::NAMESPACE_URL, $scope.':'.$this->validated('checkout_token'))->toString();
     }
 
     private function deliveryZone(): DeliveryZone

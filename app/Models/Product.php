@@ -214,12 +214,12 @@ class Product extends Model
         $activeColors = $this->colors->where('is_active', true);
 
         if ($activeColors->isEmpty()) {
-            return ['Add at least one color.'];
+            return ['Set up product photos or enable a color.'];
         }
 
         $issues = $activeColors
             ->filter(fn (ProductColor $productColor): bool => $productColor->images->isEmpty())
-            ->map(fn (ProductColor $productColor): string => "Add photos for {$productColor->nameEn()}.")
+            ->map(fn (ProductColor $productColor): string => $productColor->hasColor() ? "Add photos for {$productColor->nameEn()}." : 'Add product photos.')
             ->values()
             ->all();
 

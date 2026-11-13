@@ -7,7 +7,6 @@ use App\Services\Settings;
 use App\Support\Attribution;
 use App\Support\QatarPhone;
 use Illuminate\Http\Client\Request;
-use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 
@@ -92,7 +91,14 @@ describe('sending', function () {
         Http::fake(['graph.facebook.com/*' => Http::response(['error' => ['message' => 'Invalid token']], 400)]);
 
         app(ConversionEvents::class)->sendPurchase(orderFromAdClick());
-    })->throws(RequestException::class);
+    })->throws(RuntimeException::class, 'Meta rejected a purchase event (HTTP 400).');
+
+    it('retries transport failures with a sanitized error', function () {
+        connectAdPlatforms(tikTok: false);
+        Http::fake(['graph.facebook.com/*' => Http::failedConnection('Provider connection details')]);
+
+        app(ConversionEvents::class)->sendPurchase(orderFromAdClick());
+    })->throws(RuntimeException::class, 'Could not connect to Meta to send a purchase event.');
 });
 
 describe('queueing', function () {

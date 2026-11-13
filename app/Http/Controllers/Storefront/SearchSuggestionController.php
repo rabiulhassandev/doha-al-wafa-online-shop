@@ -48,7 +48,7 @@ class SearchSuggestionController extends Controller
 
                 return [
                     'name' => $product->translated('name'),
-                    'url' => route('products.show', ['product' => $product, 'color' => $color?->color->slug]),
+                    'url' => route('products.show', ['product' => $product, 'color' => $color?->color?->slug]),
                     'image' => $color?->images->first()?->url(400),
                     'price' => Money::format($product->priceRange()[0], app()->getLocale()),
                 ];

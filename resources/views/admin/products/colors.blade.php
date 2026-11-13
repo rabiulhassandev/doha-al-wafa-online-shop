@@ -1,11 +1,20 @@
-<x-admin.layout :title="'Colors · '.$product->name_en">
+<x-admin.layout :title="'Photos & colors · '.$product->name_en">
     <x-admin.product-tabs :product="$product" current="colors" />
 
-    <x-admin.card title="Add a color" description="Pick from your color palette. Each color gets its own photos and sizes.">
+    @if ($product->colors->isEmpty() || ($product->colors->count() === 1 && $product->colors->first()->hasColor()))
+        <x-admin.card title="Sell without colors" description="Use one photo gallery and track stock by size. If there is one color, its existing photos and stock are kept.">
+            <form method="POST" action="{{ route('admin.products.without-color', $product) }}">
+                @csrf
+                <x-admin.button type="submit" variant="secondary">Use without color</x-admin.button>
+            </form>
+        </x-admin.card>
+    @endif
+
+    @php($sharedGallery = $product->colors->contains(fn ($gallery) => ! $gallery->hasColor()))
+    <x-admin.card title="Colors (optional)" :description="$sharedGallery ? 'The first color you add takes over the existing product photos and stock.' : 'Each color gets its own photos and sizes.'">
         @if ($availableColors->isEmpty())
             <p class="text-sm text-ink-500">
-                Every palette color is already on this product.
-                <a href="{{ route('admin.colors.create') }}" class="font-medium text-maroon-700 hover:underline">Add a new color to the palette</a>.
+                <a href="{{ route('admin.colors.create') }}" class="font-medium text-maroon-700 hover:underline">Add a color to the palette</a> if you want shoppers to choose a color.
             </p>
         @else
             <form method="POST" action="{{ route('admin.products.colors.store', $product) }}" class="flex flex-col gap-3 sm:flex-row sm:items-end">
@@ -19,7 +28,7 @@
                 </div>
                 <x-admin.button type="submit">
                     <x-icon name="plus" class="size-4" />
-                    Add color
+                    {{ $sharedGallery ? 'Assign color to photos and stock' : 'Add color' }}
                 </x-admin.button>
             </form>
         @endif
@@ -30,7 +39,7 @@
             <header class="flex flex-wrap items-center gap-3 border-b border-sand-200 px-5 py-4 sm:px-6">
                 @include('admin.colors.swatch', ['color' => $productColor->color, 'sizeClass' => 'size-8'])
                 <div class="me-auto">
-                    <h2 class="text-base font-semibold">{{ $productColor->nameEn() }}</h2>
+                    <h2 class="text-base font-semibold">{{ $productColor->hasColor() ? $productColor->nameEn() : 'Product photos' }}</h2>
                     <p class="text-xs text-ink-500">
                         {{ $productColor->images->count() }} {{ str('photo')->plural($productColor->images->count()) }}
                         @unless ($productColor->is_active)
@@ -39,6 +48,7 @@
                     </p>
                 </div>
 
+                @if ($productColor->hasColor())
                 @if ($productColor->is_default)
                     <x-admin.badge color="maroon">Shown first</x-admin.badge>
                 @else
@@ -88,6 +98,7 @@
                     <x-icon name="trash" class="size-4" />
                     Remove
                 </x-admin.confirm-button>
+                @endif
             </header>
 
             <div class="grid gap-6 p-5 sm:p-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
@@ -188,10 +199,11 @@
                             @enderror
                         </form>
                     @else
-                        <p class="mt-4 text-sm text-ink-500">This color has the maximum of {{ \App\Http\Requests\Admin\ProductImageRequest::MAX_IMAGES_PER_COLOR }} photos.</p>
+                        <p class="mt-4 text-sm text-ink-500">This gallery has the maximum of {{ \App\Http\Requests\Admin\ProductImageRequest::MAX_IMAGES_PER_COLOR }} photos.</p>
                     @endif
                 </div>
 
+                @if ($productColor->hasColor())
                 <form method="POST" action="{{ route('admin.products.colors.update', [$product, $productColor]) }}" class="space-y-4 rounded-xl bg-sand-50 p-4">
                     @csrf
                     @method('PUT')
@@ -217,6 +229,7 @@
                     <x-admin.toggle name="is_active" label="Show this color to shoppers" :checked="$productColor->is_active" />
                     <x-admin.button type="submit" variant="secondary" size="sm">Save</x-admin.button>
                 </form>
+                @endif
             </div>
         </section>
     @endforeach

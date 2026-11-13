@@ -150,6 +150,9 @@ class UpdateSettingsRequest extends FormRequest
         $values['preferred_date_enabled'] = $this->boolean('preferred_date_enabled');
         $values['consent_bar_enabled'] = $this->boolean('consent_bar_enabled');
         $values['whatsapp_button_enabled'] = $this->boolean('whatsapp_button_enabled');
+        if (filled($values['feed_token'] ?? null)) {
+            $values['feed_token'] = Settings::encryptSecret($values['feed_token']);
+        }
 
         foreach (self::SECRET_SETTINGS as $key) {
             unset($values[$key], $values["{$key}_clear"]);

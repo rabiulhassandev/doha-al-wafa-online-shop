@@ -13,6 +13,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class ProductColorController extends Controller
 {
@@ -26,7 +27,7 @@ class ProductColorController extends Controller
         return view('admin.products.colors', [
             'product' => $product,
             'availableColors' => Color::query()
-                ->whereNotIn('id', $product->colors->pluck('color_id'))
+                ->whereNotIn('id', $product->colors->pluck('color_id')->filter())
                 ->ordered()
                 ->get(),
         ]);
@@ -50,6 +51,15 @@ class ProductColorController extends Controller
         ]);
 
         $productColor = DB::transaction(function () use ($product, $validated, $createVariant): ProductColor {
+            Product::query()->lockForUpdate()->findOrFail($product->id);
+            $gallery = $product->colors()->whereNull('color_id')->first();
+
+            if ($gallery !== null) {
+                $gallery->update(['color_id' => $validated['color_id']]);
+
+                return $gallery;
+            }
+
             $productColor = $product->colors()->create([
                 'color_id' => $validated['color_id'],
                 'sort_order' => ((int) $product->colors()->max('sort_order')) + 10,
@@ -70,11 +80,39 @@ class ProductColorController extends Controller
             ->with('status', "{$productColor->color->name_en} was added. Upload its photos below.");
     }
 
+    public function useWithoutColor(Product $product): RedirectResponse
+    {
+        $gallery = DB::transaction(function () use ($product): ProductColor {
+            Product::query()->lockForUpdate()->findOrFail($product->id);
+            $galleries = $product->colors()->get();
+
+            if ($galleries->count() > 1) {
+                throw ValidationException::withMessages(['color_id' => 'Keep only the color whose photos and stock you want to use.']);
+            }
+
+            $gallery = $galleries->first() ?? $product->colors()->make();
+            $gallery->fill([
+                'color_id' => null,
+                'label_en' => null,
+                'label_ar' => null,
+                'is_default' => true,
+                'is_active' => true,
+            ])->save();
+
+            return $gallery;
+        });
+
+        return redirect()
+            ->to(route('admin.products.colors.index', $product)."#color-{$gallery->id}")
+            ->with('status', 'This product uses shared photos and stock by size.');
+    }
+
     /**
      * Update a product color's label and visibility.
      */
     public function update(Request $request, Product $product, ProductColor $color): RedirectResponse
     {
+        abort_unless($color->hasColor(), 404);
         $validated = $request->validate([
             'label_en' => ['nullable', 'string', 'max:60'],
             'label_ar' => ['nullable', 'string', 'max:60'],
@@ -94,6 +132,10 @@ class ProductColorController extends Controller
     public function destroy(Product $product, ProductColor $color): RedirectResponse
     {
         DB::transaction(function () use ($product, $color): void {
+            Product::query()->lockForUpdate()->findOrFail($product->id);
+            $color->refresh();
+            abort_unless($color->hasColor(), 404);
+
             $color->delete();
 
             if ($color->is_default) {

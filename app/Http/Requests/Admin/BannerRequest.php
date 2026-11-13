@@ -33,8 +33,8 @@ class BannerRequest extends FormRequest
             'button_label_ar' => ['nullable', 'string', 'max:40'],
             // A store path such as "collection/eid" or "shop?color=navy", or a full https:// link.
             'link' => ['nullable', 'string', 'max:255', 'regex:#^(https://\S+|/?[A-Za-z0-9][A-Za-z0-9/_.,=&?%-]*)$#'],
-            'image' => [Rule::requiredIf($this->banner() === null), 'nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:8192'],
-            'mobile_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:8192'],
+            'image' => [Rule::requiredIf($this->banner() === null), 'nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:8192', 'dimensions:max_width=4096,max_height=4096'],
+            'mobile_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:8192', 'dimensions:max_width=4096,max_height=4096'],
             'remove_mobile_image' => ['boolean'],
             'starts_at' => ['nullable', 'date'],
             'ends_at' => ['nullable', 'date', Rule::when($this->filled('starts_at'), 'after:starts_at')],
