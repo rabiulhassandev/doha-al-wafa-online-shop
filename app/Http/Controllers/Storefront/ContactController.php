@@ -11,6 +11,7 @@ use App\Support\QatarPhone;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 class ContactController extends Controller
 {
@@ -19,7 +20,7 @@ class ContactController extends Controller
      */
     public function show(): View
     {
-        return view('storefront.pages.contact');
+        return view('storefront.pages.contact', ['submissionToken' => (string) Str::uuid()]);
     }
 
     /**
@@ -27,7 +28,7 @@ class ContactController extends Controller
      */
     public function store(ContactMessageRequest $request, Settings $settings): RedirectResponse
     {
-        $contactMessage = ContactMessage::query()->create([
+        $contactMessage = ContactMessage::query()->createOrFirst(['submission_token' => $request->submissionToken()], [
             'name' => $request->validated('name'),
             'phone' => QatarPhone::tryParse($request->validated('phone'))?->e164(),
             'email' => $request->validated('email'),
@@ -38,7 +39,7 @@ class ContactController extends Controller
 
         $alertEmail = $settings->get('order_alert_email');
 
-        if (filled($alertEmail)) {
+        if ($contactMessage->wasRecentlyCreated && filled($alertEmail)) {
             Mail::to($alertEmail)->locale('en')->send(new ContactMessageReceived($contactMessage));
         }
 

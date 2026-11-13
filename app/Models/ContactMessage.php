@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Model;
 /**
  * A message sent with the store's contact form.
  */
-#[Fillable(['name', 'phone', 'email', 'message', 'locale', 'ip_address', 'read_at'])]
+#[Fillable(['submission_token', 'name', 'phone', 'email', 'message', 'locale', 'ip_address', 'read_at'])]
 class ContactMessage extends Model
 {
     /** @use HasFactory<ContactMessageFactory> */

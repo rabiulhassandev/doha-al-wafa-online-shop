@@ -6,6 +6,7 @@ use App\Rules\QatarPhoneNumber;
 use App\Support\Digits;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Ramsey\Uuid\Uuid;
 
 class ContactMessageRequest extends FormRequest
 {
@@ -35,6 +36,7 @@ class ContactMessageRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'submission_token' => ['required', 'uuid'],
             'name' => ['required', 'string', 'max:120'],
             'phone' => ['nullable', 'required_without:email', 'string', new QatarPhoneNumber],
             'email' => ['nullable', 'string', 'email', 'max:190'],
@@ -52,6 +54,7 @@ class ContactMessageRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'submission_token' => __('Something went wrong. Please refresh the page and try again.'),
             'name.required' => __('Enter your name.'),
             'name.max' => __('Please shorten this to :max characters.'),
             'phone.required_without' => __('Enter your phone number or your email so we can reply.'),
@@ -61,5 +64,10 @@ class ContactMessageRequest extends FormRequest
             'message.max' => __('Please shorten this to :max characters.'),
             'website' => __('Something went wrong. Please refresh the page and try again.'),
         ];
+    }
+
+    public function submissionToken(): string
+    {
+        return Uuid::uuid5(Uuid::NAMESPACE_URL, $this->session()->token().':'.strtolower($this->validated('submission_token')))->toString();
     }
 }

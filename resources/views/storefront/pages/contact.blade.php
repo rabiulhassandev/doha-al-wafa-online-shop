@@ -53,8 +53,12 @@
                         <p>{{ session('contact_status') }}</p>
                     </div>
                 @else
-                    <form method="POST" action="{{ route('contact.store') }}" novalidate class="grid gap-5">
+                    <form method="POST" action="{{ route('contact.store') }}" novalidate class="grid gap-5" x-data="submitOnce" x-on:submit="submit($event)" x-on:pageshow.window="submitting = false">
                         @csrf
+                        <input type="hidden" name="submission_token" value="{{ $errors->has('submission_token') ? $submissionToken : old('submission_token', $submissionToken) }}">
+                        @error('submission_token')
+                            <p class="text-sm font-medium text-danger-700" role="alert">{{ $message }}</p>
+                        @enderror
                         <div class="hidden" aria-hidden="true">
                             <label for="website">Website</label>
                             <input id="website" type="text" name="website" tabindex="-1" autocomplete="off">
@@ -84,7 +88,10 @@
                             @enderror
                         </div>
 
-                        <x-store.button type="submit" size="lg" class="w-full sm:w-auto">{{ __('Send message') }}</x-store.button>
+                        <x-store.button type="submit" size="lg" class="w-full sm:w-auto" x-bind:disabled="submitting">
+                            <span x-show="! submitting">{{ __('Send message') }}</span>
+                            <span x-show="submitting" x-cloak>{{ __('Sending your message…') }}</span>
+                        </x-store.button>
                     </form>
                 @endif
             </div>

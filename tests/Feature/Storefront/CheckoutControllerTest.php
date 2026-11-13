@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\PlaceOrder;
 use App\Http\Controllers\Storefront\BuyNowController;
 use App\Models\CartItem;
 use App\Models\Coupon;
@@ -12,6 +13,7 @@ use App\Models\ProductVariant;
 use App\Models\Size;
 use App\Services\CartService;
 use App\Services\Settings;
+use App\Support\CheckoutDetails;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
@@ -271,6 +273,27 @@ describe('placing an order', function () {
         expect($first->headers->get('Location'))->toContain("/orders/{$order->number}/thank-you");
         expect($second->headers->get('Location'))->toContain("/orders/{$order->number}/thank-you");
         expect($item->productVariant->refresh()->stock)->toBe(2);
+    });
+
+    it('shows the existing order if a concurrent submission took the last item', function () {
+        $item = bagWithOnePiece(stock: 1);
+        $payload = checkoutPayload(DeliveryZone::factory()->create());
+        $placeOrder = app(PlaceOrder::class);
+
+        $this->mock(PlaceOrder::class, function ($mock) use ($placeOrder): void {
+            $mock->shouldReceive('handle')->once()->andReturnUsing(function (array $quantities, CheckoutDetails $details, int $expectedSubtotal) use ($placeOrder): Order {
+                $placeOrder->handle($quantities, $details, $expectedSubtotal);
+
+                return $placeOrder->handle($quantities, $details, $expectedSubtotal);
+            });
+        });
+
+        $response = submitCheckout($item, $payload)->assertSessionHasNoErrors();
+
+        $order = Order::query()->sole();
+        expect($response->headers->get('Location'))->toContain("/orders/{$order->number}/thank-you");
+        expect($item->productVariant->refresh()->stock)->toBe(0);
+        $this->assertDatabaseCount('payments', 1);
     });
 
     it('asks the shopper to check the order when it changed', function () {

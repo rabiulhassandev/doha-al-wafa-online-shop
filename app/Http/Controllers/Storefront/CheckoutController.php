@@ -78,7 +78,7 @@ class CheckoutController extends Controller
     public function store(PlaceOrderRequest $request, PlaceOrder $placeOrder, PaymentGateways $paymentGateways, SaveAddress $saveAddress): RedirectResponse
     {
         $checkoutToken = $request->checkoutToken();
-        $alreadyPlaced = Order::query()->firstWhere('checkout_token', $checkoutToken);
+        $alreadyPlaced = $this->placedOrder($checkoutToken);
 
         if ($alreadyPlaced !== null) {
             return redirect($alreadyPlaced->confirmationUrl());
@@ -87,6 +87,10 @@ class CheckoutController extends Controller
         [$summary, $buyNowVariant] = $this->orderSummary($request, null);
 
         if ($summary->isEmpty() || $summary->hasUnavailableLines()) {
+            if (($alreadyPlaced = $this->placedOrder($checkoutToken)) !== null) {
+                return redirect($alreadyPlaced->confirmationUrl());
+            }
+
             return $this->leaveCheckout($request, $summary, $buyNowVariant);
         }
 
@@ -97,10 +101,15 @@ class CheckoutController extends Controller
         try {
             $order = $placeOrder->handle($quantities, $request->details($checkoutToken), (int) $request->validated('expected_subtotal'));
         } catch (OrderNotPlacedException $exception) {
+            // A concurrent submission may have taken the last item or coupon use.
+            if (($alreadyPlaced = $this->placedOrder($checkoutToken)) !== null) {
+                return redirect($alreadyPlaced->confirmationUrl());
+            }
+
             return to_route('checkout.show')->withInput()->withErrors(['order' => $exception->getMessage()]);
         } catch (UniqueConstraintViolationException $exception) {
             // A second tap on "Place order" lost the race to the first one.
-            $alreadyPlaced = Order::query()->firstWhere('checkout_token', $checkoutToken) ?? throw $exception;
+            $alreadyPlaced = $this->placedOrder($checkoutToken) ?? throw $exception;
 
             return redirect($alreadyPlaced->confirmationUrl());
         }
@@ -119,6 +128,11 @@ class CheckoutController extends Controller
         $payment = $order->payments()->latest('id')->firstOrFail();
 
         return redirect($paymentGateways->for($order->payment_method)->paymentUrl($payment) ?? $order->confirmationUrl());
+    }
+
+    private function placedOrder(string $checkoutToken): ?Order
+    {
+        return Order::query()->useWritePdo()->firstWhere('checkout_token', $checkoutToken);
     }
 
     /**

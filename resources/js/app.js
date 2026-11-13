@@ -6,6 +6,7 @@ import productCards from './store/product-cards';
 import productListing from './store/product-listing';
 import productPage from './store/product-page';
 import searchBox from './store/search-box';
+import submitOnce from './store/submit-once';
 import startTracking from './store/tracking';
 import wishlist from './store/wishlist';
 
@@ -37,6 +38,7 @@ Alpine.data('productCards', productCards);
 Alpine.data('productListing', productListing);
 Alpine.data('productPage', productPage);
 Alpine.data('searchBox', searchBox);
+Alpine.data('submitOnce', submitOnce);
 
 window.Alpine = Alpine;
 

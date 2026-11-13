@@ -21,7 +21,7 @@
                 <h2 id="newsletter-title" class="font-display text-2xl">{{ __('Join our community') }}</h2>
                 <p class="mt-1 text-sm text-white/80">{{ __('Be the first to hear about new arrivals and offers.') }}</p>
             </div>
-            <form method="POST" action="{{ route('subscribers.store') }}">
+            <form method="POST" action="{{ route('subscribers.store') }}" x-data="submitOnce" x-on:submit="submit($event)" x-on:pageshow.window="submitting = false">
                 @csrf
                 <div class="hidden" aria-hidden="true">
                     <label for="newsletter-website">Website</label>
@@ -40,7 +40,10 @@
                         autocomplete="email"
                         class="h-12 min-w-0 flex-1 rounded-full border-0 bg-white px-5 text-base text-ink-900 placeholder:text-ink-500 focus:ring-2 focus:ring-gold-300 focus:outline-none"
                     >
-                    <x-store.button type="submit" variant="light">{{ __('Join') }}</x-store.button>
+                    <x-store.button type="submit" variant="light" x-bind:disabled="submitting">
+                        <span x-show="! submitting">{{ __('Join') }}</span>
+                        <span x-show="submitting" x-cloak>{{ __('Joining…') }}</span>
+                    </x-store.button>
                 </div>
                 @if ($subscribeError)
                     <p class="mt-2 text-sm font-medium text-gold-300" role="alert">{{ $subscribeError }}</p>
