@@ -31,4 +31,22 @@ final class SearchText
 
         return Str::of($text)->lower()->squish()->toString();
     }
+
+    /** @return list<string> */
+    public static function words(string $term): array
+    {
+        $normalized = self::normalize($term);
+
+        return $normalized === '' ? [] : array_values(array_unique(explode(' ', $normalized)));
+    }
+
+    public static function containsPattern(string $word): string
+    {
+        return '%'.strtr($word, ['!' => '!!', '%' => '!%', '_' => '!_']).'%';
+    }
+
+    public static function term(mixed $input): string
+    {
+        return is_string($input) ? Str::limit(trim($input), 100, '') : '';
+    }
 }

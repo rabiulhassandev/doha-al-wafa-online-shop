@@ -5,9 +5,9 @@ namespace App\Http\Controllers\Storefront;
 use App\Http\Controllers\Controller;
 use App\Services\ProductCatalog;
 use App\Support\ProductFilters;
+use App\Support\SearchText;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 
 class SearchController extends Controller
 {
@@ -16,7 +16,7 @@ class SearchController extends Controller
      */
     public function __invoke(Request $request, ProductCatalog $catalog): View
     {
-        $term = Str::limit(trim((string) $request->query('q')), 100, '');
+        $term = SearchText::term($request->query('q'));
         $filters = ProductFilters::fromRequest($request);
         $products = $catalog->search($catalog->listed(), $term);
 

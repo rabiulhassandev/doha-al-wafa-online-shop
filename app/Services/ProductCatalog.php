@@ -37,22 +37,27 @@ class ProductCatalog
     }
 
     /**
-     * Match products by name or code, ignoring Arabic spelling variations.
+     * Match each search word against product names, codes, visible categories, collections or variants.
      *
      * @param  Builder<Product>  $query
      * @return Builder<Product>
      */
     public function search(Builder $query, string $term): Builder
     {
-        $words = array_filter(explode(' ', SearchText::normalize($term)));
-
-        foreach ($words as $word) {
-            $like = '%'.addcslashes($word, '%_\\').'%';
+        foreach (SearchText::words($term) as $word) {
+            $like = SearchText::containsPattern($word);
 
             $query->where(fn (Builder $query) => $query
-                ->where('search_text', 'like', $like)
-                ->orWhereHas('category', fn (Builder $query) => $query->where('name_en', 'like', $like)->orWhere('name_ar', 'like', $like))
-                ->orWhereHas('colors.color', fn (Builder $query) => $query->where('name_en', 'like', $like)->orWhere('name_ar', 'like', $like)));
+                ->whereRaw("search_text LIKE ? ESCAPE '!'", [$like])
+                ->orWhereHas('category', fn (Builder $category) => $category->visible()
+                    ->where(fn (Builder $query) => $query->matchingName($word)
+                        ->orWhereHas('parent', fn (Builder $parent) => $parent->matchingName($word))))
+                ->orWhereHas('collections', fn (Builder $collection) => $collection->live()->matchingName($word))
+                ->orWhereHas('colors', fn (Builder $color) => $color->listed()
+                    ->whereHas('color', fn (Builder $palette) => $palette->matchingName($word)))
+                ->orWhereHas('variants', fn (Builder $variant) => $variant->where('is_active', true)
+                    ->whereHas('productColor', fn (Builder $color) => $color->listed())
+                    ->whereRaw("LOWER(sku) LIKE ? ESCAPE '!'", [$like])));
         }
 
         return $query;

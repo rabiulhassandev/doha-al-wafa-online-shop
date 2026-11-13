@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\CollectionStatus;
 use App\Models\Concerns\HasImageFiles;
+use App\Models\Concerns\HasSearchableName;
 use App\Models\Concerns\Translatable;
 use Database\Factories\CollectionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -30,7 +31,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 class Collection extends Model
 {
     /** @use HasFactory<CollectionFactory> */
-    use HasFactory, HasImageFiles, Translatable;
+    use HasFactory, HasImageFiles, HasSearchableName, Translatable;
 
     /**
      * The model's default values for attributes.

@@ -1,4 +1,4 @@
-const EMPTY_RESULTS = { products: [], categories: [] };
+const EMPTY_RESULTS = { products: [], categories: [], collections: [] };
 
 /**
  * Search overlay with live suggestions while the shopper types.
@@ -7,6 +7,8 @@ export default (suggestionsUrl) => ({
     open: false,
     query: '',
     loading: false,
+    failed: false,
+    searchedQuery: '',
     results: EMPTY_RESULTS,
     request: null,
 
@@ -23,28 +25,37 @@ export default (suggestionsUrl) => ({
         const query = this.query.trim();
 
         this.request?.abort();
+        this.results = EMPTY_RESULTS;
+        this.failed = false;
 
         if (query.length < 2) {
-            this.results = EMPTY_RESULTS;
             this.loading = false;
-
+            this.request = null;
             return;
         }
 
-        this.request = new AbortController();
+        const request = new AbortController();
+        this.request = request;
         this.loading = true;
 
         try {
             const response = await fetch(`${suggestionsUrl}?q=${encodeURIComponent(query)}`, {
                 headers: { Accept: 'application/json' },
-                signal: this.request.signal,
+                signal: request.signal,
             });
-            this.results = response.ok ? await response.json() : EMPTY_RESULTS;
-            this.loading = false;
+            const results = response.ok ? await response.json() : EMPTY_RESULTS;
+            if (request === this.request && query === this.query.trim()) {
+                this.results = { ...EMPTY_RESULTS, ...results };
+                this.failed = !response.ok;
+            }
         } catch (error) {
-            if (error.name !== 'AbortError') {
-                this.results = EMPTY_RESULTS;
+            if (request === this.request && error.name !== 'AbortError') {
+                this.failed = true;
+            }
+        } finally {
+            if (request === this.request) {
                 this.loading = false;
+                this.searchedQuery = query;
             }
         }
     },

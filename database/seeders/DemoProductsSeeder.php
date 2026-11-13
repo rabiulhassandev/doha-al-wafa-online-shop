@@ -78,7 +78,6 @@ class DemoProductsSeeder extends Seeder
                 'status' => ProductStatus::Active,
                 'is_featured' => $data['featured'],
             ]);
-            // Set explicitly: DatabaseSeeder runs without model events, so the publish hook does not fire.
             $product->forceFill(['published_at' => now()->subDays($index)])->save();
 
             $product->collections()->sync(Collection::query()->whereIn('slug', $data['collections'])->pluck('id'));

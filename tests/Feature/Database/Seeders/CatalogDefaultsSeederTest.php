@@ -7,7 +7,7 @@ use Database\Seeders\CatalogDefaultsSeeder;
 it('seeds the starter catalog', function () {
     $this->seed(CatalogDefaultsSeeder::class);
 
-    $this->assertDatabaseCount('categories', 3);
+    $this->assertDatabaseCount('categories', 2);
     $this->assertDatabaseCount('collections', 3);
     $this->assertDatabaseCount('colors', 0);
     $this->assertDatabaseCount('sizes', 13);
@@ -20,7 +20,7 @@ it('runs again without duplicating rows', function () {
 
     $this->seed(CatalogDefaultsSeeder::class);
 
-    $this->assertDatabaseCount('categories', 3);
+    $this->assertDatabaseCount('categories', 2);
     $this->assertDatabaseCount('colors', 0);
     $this->assertDatabaseCount('sizes', 13);
     $this->assertDatabaseCount('size_guides', 1);

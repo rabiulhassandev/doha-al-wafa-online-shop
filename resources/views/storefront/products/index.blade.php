@@ -58,7 +58,7 @@
         @if ($searchTerm !== null)
             <form method="GET" action="{{ route('search') }}" class="mt-4 flex max-w-xl gap-2" role="search">
                 <label for="search-page-input" class="sr-only">{{ __('Search') }}</label>
-                <input id="search-page-input" type="search" name="q" value="{{ $searchTerm }}" maxlength="100" placeholder="{{ __('Search jelabiyas, colors…') }}" class="h-12 min-w-0 flex-1 rounded-xl border border-sand-300 bg-white px-4 text-base focus:border-maroon-700 focus:ring-2 focus:ring-maroon-100 focus:outline-none">
+                <input id="search-page-input" type="search" name="q" value="{{ $searchTerm }}" maxlength="100" placeholder="{{ __('Search products, categories or collections…') }}" class="h-12 min-w-0 flex-1 rounded-xl border border-sand-300 bg-white px-4 text-base focus:border-maroon-700 focus:ring-2 focus:ring-maroon-100 focus:outline-none">
                 <x-store.button type="submit">{{ __('Search') }}</x-store.button>
             </form>
         @endif

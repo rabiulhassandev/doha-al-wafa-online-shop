@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Category;
+use App\Models\Collection;
 
 it('suggests products and categories as JSON', function () {
     $product = listedProduct(['name_en' => 'Navy kaftan', 'name_ar' => 'قفطان كحلي', 'price' => 18500]);
@@ -28,5 +29,18 @@ it('waits for at least two characters', function () {
 
     $this->getJson(route('search.suggestions', ['locale' => 'en', 'q' => 'n']))
         ->assertOk()
-        ->assertExactJson(['products' => [], 'categories' => []]);
+        ->assertExactJson(['products' => [], 'categories' => [], 'collections' => []]);
+});
+
+it('suggests matching Arabic categories and collections and their products', function () {
+    $category = Category::factory()->create(['name_ar' => 'أزياء العيد']);
+    $collection = Collection::factory()->create(['name_ar' => 'أزياء العيد']);
+    $product = listedProduct(['category_id' => $category->id]);
+    $product->collections()->attach($collection);
+
+    $this->getJson(route('search.suggestions', ['locale' => 'ar', 'q' => 'ازياء']))
+        ->assertOk()
+        ->assertJsonPath('products.0.name', $product->name_ar)
+        ->assertJsonPath('categories.0.url', route('category.show', ['locale' => 'ar', 'category' => $category]))
+        ->assertJsonPath('collections.0.url', route('collection.show', ['locale' => 'ar', 'collection' => $collection]));
 });

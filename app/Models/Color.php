@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasImageFiles;
+use App\Models\Concerns\HasSearchableName;
 use App\Models\Concerns\Translatable;
 use Database\Factories\ColorFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -19,7 +20,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Color extends Model
 {
     /** @use HasFactory<ColorFactory> */
-    use HasFactory, HasImageFiles, Translatable;
+    use HasFactory, HasImageFiles, HasSearchableName, Translatable;
 
     /**
      * The model's default values for attributes.
