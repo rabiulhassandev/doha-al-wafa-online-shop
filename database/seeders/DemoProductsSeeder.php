@@ -14,6 +14,7 @@ use App\Models\Size;
 use App\Models\SizeGuide;
 use App\Services\ImageStore;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 
 /**
@@ -104,7 +105,7 @@ class DemoProductsSeeder extends Seeder
 
             foreach ($sizes as $size) {
                 $variant = $this->createVariant->handle($gallery, $size);
-                $this->adjustStock->setTo($variant, fake()->randomElement([1, 2, 4, 6, 9]), StockMovementReason::Recount, note: 'Demo data');
+                $this->adjustStock->setTo($variant, Arr::random([1, 2, 4, 6, 9]), StockMovementReason::Recount, note: 'Demo data');
             }
         }
     }
