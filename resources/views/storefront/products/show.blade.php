@@ -81,12 +81,20 @@
                             x-on:scroll.debounce.50ms="onGalleryScroll($el, @js($slug))"
                             class="flex snap-x snap-mandatory overflow-x-auto rounded-2xl border border-sand-200 bg-sand-100 [scrollbar-width:none]"
                         >
+                            @foreach ($productColor->videos as $video)
+                                <div class="aspect-square w-full shrink-0 snap-center bg-ink-900" data-video-slide="{{ $loop->index }}">
+                                    <video controls muted loop playsinline preload="none" @if ($loop->first && $productColor->is($selectedColor)) autoplay @endif aria-label="{{ __('Product video :number', ['number' => $loop->iteration]) }}" class="size-full object-contain" tabindex="{{ $loop->first ? 0 : -1 }}" x-bind:tabindex="imageIndex === {{ $loop->index }} ? 0 : -1">
+                                        <source src="{{ $video->url() }}" type="{{ $video->mime_type }}">
+                                        {{ __('Your browser does not support video playback.') }}
+                                    </video>
+                                </div>
+                            @endforeach
                             @foreach ($productColor->images as $image)
                                 <button
                                     type="button"
                                     x-on:click="openLightbox({{ $loop->index }})"
-                                    tabindex="{{ $loop->first ? 0 : -1 }}"
-                                    x-bind:tabindex="imageIndex === {{ $loop->index }} ? 0 : -1"
+                                    tabindex="{{ $loop->first && $productColor->videos->isEmpty() ? 0 : -1 }}"
+                                    x-bind:tabindex="imageIndex === {{ $productColor->videos->count() + $loop->index }} ? 0 : -1"
                                     class="aspect-square w-full shrink-0 snap-center cursor-zoom-in focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-maroon-700"
                                 >
                                     <img
@@ -97,33 +105,39 @@
                                         width="1200"
                                         height="1500"
                                         class="size-full object-contain"
-                                        @if ($loop->first && $productColor->is($selectedColor)) fetchpriority="high" @else loading="lazy" decoding="async" @endif
+                                        @if ($loop->first && $productColor->is($selectedColor) && $productColor->videos->isEmpty()) fetchpriority="high" @else loading="lazy" decoding="async" @endif
                                     >
                                     <span class="sr-only">{{ __('Enlarge photo :number', ['number' => $loop->iteration]) }}</span>
                                 </button>
                             @endforeach
                         </div>
 
-                        @if ($productColor->images->count() > 1)
-                            <div class="mt-3 grid grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] items-center gap-2" role="group" aria-label="{{ __('Photo thumbnails') }}">
-                                <button type="button" x-on:click="selectPhoto(imageIndex - 1)" disabled x-bind:disabled="imageIndex === 0" aria-label="{{ __('Previous photo') }}" class="grid size-10 place-items-center rounded-full border border-sand-200 bg-white hover:border-maroon-700 disabled:opacity-35">
+                        @if ($productColor->images->count() + $productColor->videos->count() > 1)
+                            <div class="mt-3 grid grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] items-center gap-2" role="group" aria-label="{{ __('Product photos and videos') }}">
+                                <button type="button" x-on:click="selectPhoto(imageIndex - 1)" disabled x-bind:disabled="imageIndex === 0" aria-label="{{ __('Previous item') }}" class="grid size-10 place-items-center rounded-full border border-sand-200 bg-white hover:border-maroon-700 disabled:opacity-35">
                                     <x-icon name="chevron-end" class="size-5 rotate-180 rtl:rotate-0" />
                                 </button>
                                 <div data-photo-thumbnails class="flex gap-2 overflow-x-auto [scrollbar-width:none]">
+                                    @foreach ($productColor->videos as $video)
+                                        <button type="button" x-on:click="selectPhoto({{ $loop->index }})" aria-label="{{ __('Show video :number', ['number' => $loop->iteration]) }}" aria-pressed="{{ $loop->first ? 'true' : 'false' }}" x-bind:aria-pressed="(imageIndex === {{ $loop->index }}).toString()" class="flex size-14 shrink-0 flex-col items-center justify-center gap-1 rounded-lg border-2 border-sand-200 bg-white text-maroon-700 hover:border-maroon-600 aria-pressed:border-maroon-700 focus-visible:outline-2 focus-visible:outline-maroon-700 sm:size-16">
+                                            <span aria-hidden="true">▶</span>
+                                            <span class="text-xs">{{ __('Video') }}</span>
+                                        </button>
+                                    @endforeach
                                     @foreach ($productColor->images as $image)
                                         <button
                                             type="button"
-                                            x-on:click="selectPhoto({{ $loop->index }})"
+                                            x-on:click="selectPhoto({{ $productColor->videos->count() + $loop->index }})"
                                             aria-label="{{ __('Show photo :number', ['number' => $loop->iteration]) }}"
-                                            aria-pressed="{{ $loop->first ? 'true' : 'false' }}"
-                                            x-bind:aria-pressed="(imageIndex === {{ $loop->index }}).toString()"
+                                            aria-pressed="{{ $loop->first && $productColor->videos->isEmpty() ? 'true' : 'false' }}"
+                                            x-bind:aria-pressed="(imageIndex === {{ $productColor->videos->count() + $loop->index }}).toString()"
                                             class="size-14 shrink-0 overflow-hidden rounded-lg border-2 border-sand-200 bg-white p-0.5 hover:border-maroon-600 aria-pressed:border-maroon-700 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-maroon-700 sm:size-16"
                                         >
                                             <img src="{{ $image->url(400) }}" alt="" loading="lazy" decoding="async" width="64" height="64" class="size-full rounded-sm object-cover">
                                         </button>
                                     @endforeach
                                 </div>
-                                <button type="button" x-on:click="selectPhoto(imageIndex + 1)" x-bind:disabled="imageIndex === current.images.length - 1" aria-label="{{ __('Next photo') }}" class="grid size-10 place-items-center rounded-full border border-sand-200 bg-white hover:border-maroon-700 disabled:opacity-35">
+                                <button type="button" x-on:click="selectPhoto(imageIndex + 1)" x-bind:disabled="imageIndex === current.mediaCount - 1" aria-label="{{ __('Next item') }}" class="grid size-10 place-items-center rounded-full border border-sand-200 bg-white hover:border-maroon-700 disabled:opacity-35">
                                     <x-icon name="chevron-end" class="size-5 rtl:rotate-180" />
                                 </button>
                             </div>

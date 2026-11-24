@@ -1,4 +1,11 @@
 {
+    "Video": "فيديو",
+    "Product video :number": "فيديو المنتج :number",
+    "Show video :number": "عرض الفيديو :number",
+    "Product photos and videos": "صور وفيديوهات المنتج",
+    "Next item": "العنصر التالي",
+    "Previous item": "العنصر السابق",
+    "Your browser does not support video playback.": "متصفحك لا يدعم تشغيل الفيديو.",
     "(optional)": "(اختياري)",
     ":amount off": "خصم :amount",
     ":count item|:count items": "{1} قطعة واحدة|{2} قطعتان|[3,10] :count قطع|[11,*] :count قطعة",

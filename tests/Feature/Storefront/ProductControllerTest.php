@@ -3,6 +3,7 @@
 use App\Models\Category;
 use App\Models\DeliveryZone;
 use App\Models\ProductImage;
+use App\Models\ProductVideo;
 use App\Models\SizeGuide;
 use App\Models\User;
 use App\Services\Settings;
@@ -14,6 +15,24 @@ it('opens the product in the color from the link', function () {
         ->assertOk()
         ->assertSee('<h1 class="mt-1 font-display text-3xl leading-tight text-balance">'.e($product->name_en).'</h1>', false)
         ->assertViewHas('pageData', fn (array $data) => $data['color'] === 'olive');
+});
+
+it('shows videos before photos and autoplays only the first video in the selected color', function () {
+    $product = listedProduct(stockByColor: ['navy' => ['56' => 2], 'olive' => ['56' => 2]]);
+    $navy = $product->colors()->firstWhere('is_default', true);
+    $olive = $product->colors()->where('id', '!=', $navy->id)->firstOrFail();
+    $first = ProductVideo::factory()->for($navy)->create();
+    $second = ProductVideo::factory()->for($navy)->create();
+    $selected = ProductVideo::factory()->for($olive)->create();
+
+    $response = $this->get(route('products.show', ['locale' => 'en', 'product' => $product, 'color' => 'olive']))
+        ->assertOk()
+        ->assertSeeInOrder(['data-video-slide="0"', $first->url(), 'data-video-slide="1"', $second->url(), 'x-on:click="openLightbox(0)"'], false)
+        ->assertSee('x-bind:tabindex="imageIndex === 2 ? 0 : -1"', false);
+
+    preg_match_all('/<video\b[^>]*\bautoplay\b[^>]*>.*?<\/video>/s', $response->getContent(), $autoplayVideos);
+    expect($autoplayVideos[0])->toHaveCount(1);
+    expect($autoplayVideos[0][0])->toContain($selected->url())->toContain('muted loop playsinline');
 });
 
 it('falls back to the color shown first for an unknown color', function () {
@@ -125,9 +144,9 @@ it('shows photo controls only for galleries with multiple images', function () {
 
     $this->get(route('products.show', ['locale' => 'en', 'product' => $product]))
         ->assertOk()
-        ->assertSee('aria-label="Previous photo"', false)
+        ->assertSee('aria-label="Previous item"', false)
         ->assertSee('aria-label="Show photo 2"', false)
-        ->assertSee('aria-label="Next photo"', false)
+        ->assertSee('aria-label="Next item"', false)
         ->assertSee($secondPhoto->url(400))
         ->assertViewHas('pageData', fn (array $data) => count($data['colors']['navy']['images']) === 2
             && count($data['colors']['olive']['images']) === 1);

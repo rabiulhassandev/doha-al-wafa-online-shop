@@ -22,7 +22,7 @@ class ProductColorController extends Controller
      */
     public function index(Product $product): View
     {
-        $product->load(['colors.color', 'colors.images', 'variants']);
+        $product->load(['colors.color', 'colors.images', 'colors.videos', 'variants']);
 
         return view('admin.products.colors', [
             'product' => $product,

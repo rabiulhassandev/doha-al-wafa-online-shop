@@ -54,6 +54,7 @@ class ProductColor extends Model
         // Delete images one by one so their files are removed from storage too.
         static::deleting(function (ProductColor $productColor): void {
             $productColor->images()->get()->each->delete();
+            $productColor->videos()->get()->each->delete();
         });
     }
 
@@ -85,6 +86,12 @@ class ProductColor extends Model
     public function images(): HasMany
     {
         return $this->hasMany(ProductImage::class)->orderBy('sort_order')->orderBy('id');
+    }
+
+    /** @return HasMany<ProductVideo, $this> */
+    public function videos(): HasMany
+    {
+        return $this->hasMany(ProductVideo::class)->orderBy('id');
     }
 
     /**

@@ -1,4 +1,4 @@
-<x-admin.layout :title="'Photos & colors · '.$product->name_en">
+<x-admin.layout :title="'Photos, videos & colors · '.$product->name_en">
     <x-admin.product-tabs :product="$product" current="colors" />
 
     @if ($product->colors->isEmpty() || ($product->colors->count() === 1 && $product->colors->first()->hasColor()))
@@ -39,9 +39,10 @@
             <header class="flex flex-wrap items-center gap-3 border-b border-sand-200 px-5 py-4 sm:px-6">
                 @include('admin.colors.swatch', ['color' => $productColor->color, 'sizeClass' => 'size-8'])
                 <div class="me-auto">
-                    <h2 class="text-base font-semibold">{{ $productColor->hasColor() ? $productColor->nameEn() : 'Product photos' }}</h2>
+                    <h2 class="text-base font-semibold">{{ $productColor->hasColor() ? $productColor->nameEn() : 'Product photos & videos' }}</h2>
                     <p class="text-xs text-ink-500">
                         {{ $productColor->images->count() }} {{ str('photo')->plural($productColor->images->count()) }}
+                        · {{ $productColor->videos->count() }} {{ str('video')->plural($productColor->videos->count()) }}
                         @unless ($productColor->is_active)
                             · Hidden from shoppers
                         @endunless
@@ -200,6 +201,45 @@
                         </form>
                     @else
                         <p class="mt-4 text-sm text-ink-500">This gallery has the maximum of {{ \App\Http\Requests\Admin\ProductImageRequest::MAX_IMAGES_PER_COLOR }} photos.</p>
+                    @endif
+
+                    <h3 class="mt-6 text-sm font-semibold">Videos</h3>
+                    <p class="mt-1 text-xs text-ink-500">Videos appear first and autoplay muted in a loop. Keep at least one photo for the product cover.</p>
+                    @foreach ($productColor->videos as $video)
+                        <div class="mt-3 rounded-xl border border-sand-200 p-3">
+                            <video controls playsinline preload="metadata" class="aspect-video w-full rounded-lg bg-ink-900">
+                                <source src="{{ $video->url() }}" type="{{ $video->mime_type }}">
+                            </video>
+                            <div class="mt-2 flex items-center justify-between gap-2">
+                                <span class="text-sm">Video {{ $loop->iteration }}</span>
+                                <x-admin.confirm-button
+                                    :action="route('admin.products.colors.videos.destroy', [$product, $productColor, $video])"
+                                    title="Delete this video?"
+                                    message="It is removed from the product straight away."
+                                    class="rounded-lg px-3 py-2 text-sm font-medium text-danger-700 hover:bg-danger-50"
+                                >Delete video</x-admin.confirm-button>
+                            </div>
+                        </div>
+                    @endforeach
+                    @if ($productColor->videos->count() < \App\Http\Requests\Admin\ProductVideoRequest::MAX_VIDEOS_PER_GALLERY)
+                        <form method="POST" action="{{ route('admin.products.colors.videos.store', [$product, $productColor]) }}" enctype="multipart/form-data" x-data="{ uploading: false }" x-on:submit="if (uploading) { $event.preventDefault(); } else { uploading = true; }" x-on:pageshow.window="uploading = false" class="mt-3 space-y-3 rounded-xl border border-dashed border-sand-300 bg-sand-50 p-4">
+                            @csrf
+                            <label for="video-{{ $productColor->id }}" class="block text-sm font-medium">Add video</label>
+                            <input id="video-{{ $productColor->id }}" name="video" type="file" accept="video/mp4,video/webm,.mp4,.webm" required class="block w-full min-w-0 text-sm">
+                            <p class="text-xs text-ink-500">MP4 or WebM, up to 30 MB each. Up to 3 videos per gallery. For MP4, export as H.264 with AAC audio for mobile playback.</p>
+                            @error('video')
+                                <p class="text-sm font-medium text-danger-700" role="alert">{{ $message }}</p>
+                            @enderror
+                            <x-admin.button type="submit" x-bind:disabled="uploading">
+                                <span x-show="! uploading">Upload video</span>
+                                <span x-show="uploading" x-cloak>Uploading video…</span>
+                            </x-admin.button>
+                        </form>
+                    @else
+                        <p class="mt-3 text-sm text-ink-500">This gallery has the maximum of 3 videos.</p>
+                        @error('video')
+                            <p class="mt-2 text-sm font-medium text-danger-700" role="alert">{{ $message }}</p>
+                        @enderror
                     @endif
                 </div>
 

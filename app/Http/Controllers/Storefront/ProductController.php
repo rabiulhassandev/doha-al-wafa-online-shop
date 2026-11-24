@@ -37,6 +37,7 @@ class ProductController extends Controller
             'sizeGuide',
             'colors.color',
             'colors.images',
+            'colors.videos',
             'colors.variants' => fn ($query) => $query->where('is_active', true)->with('size'),
         ]);
 
@@ -135,6 +136,7 @@ class ProductController extends Controller
             'colors' => $colors->mapWithKeys(fn (ProductColor $productColor): array => [
                 ($productColor->color?->slug ?? '') => [
                     'name' => $productColor->displayName(),
+                    'mediaCount' => $productColor->images->count() + $productColor->videos->count(),
                     'images' => $productColor->images->map(fn (ProductImage $image): array => [
                         'src' => $image->url(1200),
                         'srcset' => $image->srcset(),

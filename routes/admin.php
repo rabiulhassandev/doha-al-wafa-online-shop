@@ -28,6 +28,7 @@ use App\Http\Controllers\Admin\ProductImageController;
 use App\Http\Controllers\Admin\ProductImagePositionController;
 use App\Http\Controllers\Admin\ProductStockController;
 use App\Http\Controllers\Admin\ProductVariantController;
+use App\Http\Controllers\Admin\ProductVideoController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\ReportExportController;
 use App\Http\Controllers\Admin\SettingsController;
@@ -105,6 +106,8 @@ Route::middleware(['auth', 'can:access-admin'])->group(function (): void {
             Route::post('colors/{color}/images', [ProductImageController::class, 'store'])->name('colors.images.store');
             Route::delete('colors/{color}/images/{image}', [ProductImageController::class, 'destroy'])->name('colors.images.destroy');
             Route::put('colors/{color}/images/{image}/position', ProductImagePositionController::class)->name('colors.images.position');
+            Route::post('colors/{color}/videos', [ProductVideoController::class, 'store'])->name('colors.videos.store');
+            Route::delete('colors/{color}/videos/{video}', [ProductVideoController::class, 'destroy'])->name('colors.videos.destroy');
 
             Route::get('stock', [ProductStockController::class, 'edit'])->name('stock.edit');
             Route::put('stock', [ProductStockController::class, 'update'])->name('stock.update');

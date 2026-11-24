@@ -20,6 +20,7 @@ export default (data) => ({
 
     init() {
         rememberViewed(this.productId);
+        this.$nextTick(() => this.syncVideoPlayback());
     },
 
     get current() {
@@ -69,6 +70,7 @@ export default (data) => ({
             return;
         }
 
+        this.pauseVideos();
         this.color = colorSlug;
         this.imageIndex = 0;
 
@@ -129,7 +131,7 @@ export default (data) => ({
     },
 
     selectPhoto(index) {
-        if (index < 0 || index >= this.current.images.length) {
+        if (index < 0 || index >= this.current.mediaCount) {
             return;
         }
 
@@ -139,6 +141,7 @@ export default (data) => ({
         const offset = (slide.left + slide.right - bounds.left - bounds.right) / 2;
         track.scrollBy({ left: offset });
         this.imageIndex = index;
+        this.syncVideoPlayback();
         this.revealThumbnail();
     },
 
@@ -147,9 +150,10 @@ export default (data) => ({
             return;
         }
 
-        const index = Math.min(this.current.images.length - 1, Math.round(Math.abs(track.scrollLeft) / track.clientWidth));
+        const index = Math.min(this.current.mediaCount - 1, Math.round(Math.abs(track.scrollLeft) / track.clientWidth));
         if (index !== this.imageIndex) {
             this.imageIndex = index;
+            this.syncVideoPlayback();
             this.revealThumbnail();
         }
     },
@@ -169,8 +173,33 @@ export default (data) => ({
     },
 
     openLightbox(index) {
+        this.pauseVideos();
         this.lightboxOpen = true;
         this.$nextTick(() => this.$refs.lightboxTrack.children[index]?.scrollIntoView({ inline: 'center' }));
+    },
+
+    pauseVideos() {
+        this.$root.querySelectorAll('[data-video-slide] video').forEach((video) => video.pause());
+    },
+
+    syncVideoPlayback() {
+        const activeGallery = this.gallery;
+
+        this.$root.querySelectorAll('[data-video-slide]').forEach((slide) => {
+            const video = slide.querySelector('video');
+            const isActive = slide.closest('[data-product-gallery]') === activeGallery
+                && Number(slide.dataset.videoSlide) === this.imageIndex
+                && !this.lightboxOpen;
+
+            if (isActive) {
+                video.muted = true;
+                video.play().catch(() => {
+                    // Playback controls remain available when the browser blocks autoplay.
+                });
+            } else {
+                video.pause();
+            }
+        });
     },
 
     get shareUrl() {
