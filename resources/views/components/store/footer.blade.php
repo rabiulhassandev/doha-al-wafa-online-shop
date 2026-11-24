@@ -21,13 +21,13 @@
                 <h2 id="newsletter-title" class="font-display text-2xl">{{ __('Join our community') }}</h2>
                 <p class="mt-1 text-sm text-white/80">{{ __('Be the first to hear about new arrivals and offers.') }}</p>
             </div>
-            <form method="POST" action="{{ route('subscribers.store') }}" x-data="submitOnce" x-on:submit="submit($event)" x-on:pageshow.window="submitting = false">
+            <form method="POST" action="{{ route('subscribers.store') }}" class="min-w-0" x-data="submitOnce" x-on:submit="submit($event)" x-on:pageshow.window="submitting = false">
                 @csrf
                 <div class="hidden" aria-hidden="true">
                     <label for="newsletter-website">Website</label>
                     <input id="newsletter-website" type="text" name="website" tabindex="-1" autocomplete="off">
                 </div>
-                <div class="flex gap-2">
+                <div class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
                     <label for="newsletter-contact" class="sr-only">{{ __('WhatsApp number or email') }}</label>
                     <input
                         id="newsletter-contact"
@@ -38,9 +38,9 @@
                         required
                         dir="auto"
                         autocomplete="email"
-                        class="h-12 min-w-0 flex-1 rounded-full border-0 bg-white px-5 text-base text-ink-900 placeholder:text-ink-500 focus:ring-2 focus:ring-gold-300 focus:outline-none"
+                        class="h-11 w-full min-w-0 rounded-full border-0 bg-white px-3 text-base text-ink-900 placeholder:text-ink-500 focus:ring-2 focus:ring-gold-300 focus:outline-none sm:h-12 sm:px-5"
                     >
-                    <x-store.button type="submit" variant="light" x-bind:disabled="submitting">
+                    <x-store.button type="submit" variant="light" class="whitespace-nowrap max-sm:h-11 max-sm:px-4" x-bind:disabled="submitting">
                         <span x-show="! submitting">{{ __('Join') }}</span>
                         <span x-show="submitting" x-cloak>{{ __('Joining…') }}</span>
                     </x-store.button>
