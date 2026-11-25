@@ -14,7 +14,7 @@
                 width="800"
                 height="1000"
                 @if ($eager) fetchpriority="high" @else loading="lazy" decoding="async" @endif
-                @class(['aspect-[4/5] w-full object-cover transition duration-500 group-hover:scale-[1.03]', 'opacity-60' => ! $inStock])
+                @class(['aspect-[4/5] w-full object-contain transition duration-500 group-hover:scale-[1.03]', 'opacity-60' => ! $inStock])
             >
         @endif
 

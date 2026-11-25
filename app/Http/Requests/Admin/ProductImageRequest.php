@@ -31,7 +31,7 @@ class ProductImageRequest extends FormRequest
         return [
             'images' => ['required', 'array', 'min:1', 'max:'.self::MAX_IMAGES_PER_COLOR],
             'images.*' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:15360', 'dimensions:min_width=500,min_height=625,max_width=4096,max_height=4096'],
-            'focus' => ['required', Rule::enum(ImageFocus::class)],
+            'focus' => ['sometimes', Rule::enum(ImageFocus::class)],
         ];
     }
 

@@ -2,6 +2,11 @@
 
 use App\Models\ProductImage;
 
+it('provides the full-resolution source URL for the photo viewer', function () {
+    $image = ProductImage::factory()->make(['directory' => 'products/1/original']);
+    expect($image->sourceUrl())->toEndWith('/storage/products/1/original/source.webp');
+});
+
 it('picks the smallest stored width that is wide enough', function (int $requested, string $expectedFile) {
     $image = ProductImage::factory()->make(['directory' => 'products/1/abc', 'widths' => [1200, 800, 400]]);
 

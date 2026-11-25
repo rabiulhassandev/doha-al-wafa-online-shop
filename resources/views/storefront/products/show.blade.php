@@ -134,7 +134,7 @@
                                             x-bind:aria-pressed="(imageIndex === {{ $productColor->videos->count() + $loop->index }}).toString()"
                                             class="size-14 shrink-0 overflow-hidden rounded-lg border-2 border-sand-200 bg-white p-0.5 hover:border-maroon-600 aria-pressed:border-maroon-700 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-maroon-700 sm:size-16"
                                         >
-                                            <img src="{{ $image->url(400) }}" alt="" loading="lazy" decoding="async" width="64" height="64" class="size-full rounded-sm object-cover">
+                                            <img src="{{ $image->url(400) }}" alt="" loading="lazy" decoding="async" width="64" height="64" class="size-full rounded-sm object-contain">
                                         </button>
                                     @endforeach
                                 </div>
@@ -375,7 +375,7 @@
                 x-on:touchcancel="lightboxTouch = null"
                 x-on:touchend.passive="endLightboxSwipe($event)"
             >
-                <img x-bind:src="lightboxOpen ? current.images[lightboxIndex]?.src : null" x-bind:srcset="lightboxOpen ? current.images[lightboxIndex]?.srcset : null" sizes="100vw" alt="{{ $name }}" draggable="false" class="absolute inset-0 size-full object-contain px-2 sm:px-16">
+                <img x-bind:src="lightboxOpen ? current.images[lightboxIndex]?.full : null" alt="{{ $name }}" draggable="false" class="absolute inset-0 size-full object-contain px-2 sm:px-16">
                 <button type="button" x-show="current.images.length > 1" x-on:click="selectLightboxPhoto(lightboxIndex - 1)" x-bind:disabled="lightboxIndex === 0" aria-label="{{ __('Previous photo') }}" class="absolute start-2 top-1/2 grid size-11 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-ink-900 shadow-sm hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:opacity-30 sm:start-4">
                     <x-icon name="chevron-end" class="size-6 rotate-180 rtl:rotate-0" />
                 </button>
@@ -388,7 +388,7 @@
                 <div x-ref="lightboxThumbnails" class="mx-auto flex w-fit max-w-full gap-2 overflow-x-auto overscroll-x-contain py-1 [scrollbar-width:none]" role="group" aria-label="{{ __('Photo thumbnails') }}">
                     <template x-for="(image, index) in current.images" :key="color + index">
                         <button type="button" x-on:click="selectLightboxPhoto(index)" x-bind:aria-label="messages.showPhoto.replace(':number', index + 1)" x-bind:aria-pressed="(lightboxIndex === index).toString()" class="size-12 shrink-0 overflow-hidden rounded-lg border-2 border-transparent opacity-60 hover:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white aria-pressed:border-white aria-pressed:opacity-100 sm:size-14">
-                            <img x-bind:src="lightboxOpen ? image.src : null" x-bind:srcset="lightboxOpen ? image.srcset : null" sizes="56px" alt="" loading="lazy" class="size-full object-cover">
+                            <img x-bind:src="lightboxOpen ? image.src : null" x-bind:srcset="lightboxOpen ? image.srcset : null" sizes="56px" alt="" loading="lazy" class="size-full object-contain">
                         </button>
                     </template>
                 </div>

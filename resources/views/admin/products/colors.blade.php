@@ -105,14 +105,14 @@
             <div class="grid gap-6 p-5 sm:p-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
                 <div>
                     <h3 class="text-sm font-medium">Photos</h3>
-                    <p class="mt-0.5 text-xs text-ink-500">The first photo is the cover. Photos are cropped to a 4:5 portrait shape.</p>
+                    <p class="mt-0.5 text-xs text-ink-500">The first photo is the cover. Photos keep their original dimensions and proportions.</p>
 
                     @if ($productColor->images->isNotEmpty())
                         <ul class="mt-3 grid grid-cols-3 gap-3 sm:grid-cols-4 xl:grid-cols-6">
                             @foreach ($productColor->images as $image)
                                 <li class="group">
                                     <div class="relative aspect-[4/5] overflow-hidden rounded-lg bg-sand-100">
-                                        <img src="{{ $image->url(400) }}" alt="" class="size-full object-cover" loading="lazy">
+                                        <img src="{{ $image->url(400) }}" alt="" class="size-full object-contain" loading="lazy">
                                         @if ($loop->first)
                                             <span class="absolute start-1.5 top-1.5 rounded-full bg-ink-900/80 px-2 py-0.5 text-[11px] font-medium text-white">Cover</span>
                                         @endif
@@ -174,23 +174,12 @@
                                         class="mt-1.5 block w-full text-sm text-ink-700 file:me-3 file:h-9 file:rounded-lg file:border-0 file:bg-white file:px-3 file:text-sm file:font-medium file:shadow-sm hover:file:bg-sand-100"
                                     >
                                 </div>
-                                <fieldset>
-                                    <legend class="text-sm font-medium">Keep the</legend>
-                                    <div class="mt-1.5 flex rounded-lg border border-sand-300 bg-white p-0.5 text-sm">
-                                        @foreach (\App\Enums\ImageFocus::cases() as $focus)
-                                            <label class="cursor-pointer rounded-md px-3 py-1.5 has-checked:bg-ink-900 has-checked:text-white">
-                                                <input type="radio" name="focus" value="{{ $focus->value }}" x-model="focus" class="sr-only" @checked($focus === \App\Enums\ImageFocus::Center)>
-                                                {{ $focus->label() }}
-                                            </label>
-                                        @endforeach
-                                    </div>
-                                </fieldset>
                                 <x-admin.button type="submit" x-bind:disabled="busy">
                                     <span x-show="! busy">Upload</span>
                                     <span x-show="busy" x-cloak x-text="`Uploading ${done + 1} of ${total}…`"></span>
                                 </x-admin.button>
                             </div>
-                            <p class="mt-2 text-xs text-ink-500">JPG, PNG or WebP, at least 500 × 625 pixels. Large phone photos are shrunk before uploading.</p>
+                            <p class="mt-2 text-xs text-ink-500">JPG, PNG or WebP, up to 15 MB. At least 500 × 625 pixels and at most 4096 pixels on either side. Original dimensions and proportions are preserved.</p>
                             <p x-show="error" x-cloak x-text="error" class="mt-2 text-sm font-medium text-danger-700" role="alert"></p>
                             @error('images')
                                 <p class="mt-2 text-sm font-medium text-danger-700">{{ $message }}</p>

@@ -138,6 +138,7 @@ class ProductController extends Controller
                     'name' => $productColor->displayName(),
                     'mediaCount' => $productColor->images->count() + $productColor->videos->count(),
                     'images' => $productColor->images->map(fn (ProductImage $image): array => [
+                        'full' => $image->sourceUrl(),
                         'src' => $image->url(1200),
                         'srcset' => $image->srcset(),
                     ])->values(),

@@ -1,12 +1,7 @@
 /**
- * Uploads product photos one at a time, shrinking large phone photos in the browser first.
- * One photo per request keeps each upload small and fast on mobile data, and avoids server size limits.
+ * Uploads original product photos one at a time without resizing or changing the file format.
  */
-const MAX_SIDE = 2000;
-const SHRINK_ABOVE_BYTES = 2_500_000;
-
 export default (uploadUrl) => ({
-    focus: 'center',
     busy: false,
     done: 0,
     total: 0,
@@ -27,8 +22,7 @@ export default (uploadUrl) => ({
         for (const file of files) {
             try {
                 const body = new FormData();
-                body.append('images[]', await shrink(file), file.name.replace(/\.\w+$/, '') + '.jpg');
-                body.append('focus', this.focus);
+                body.append('images[]', file, file.name);
 
                 const response = await fetch(uploadUrl, {
                     method: 'POST',
@@ -64,37 +58,6 @@ export default (uploadUrl) => ({
         }
     },
 });
-
-/**
- * Resize a photo so its longest side is at most MAX_SIDE pixels, honoring the phone's rotation.
- * Returns the original file when it is already small or the browser cannot resize.
- */
-async function shrink(file) {
-    if (!('createImageBitmap' in window)) {
-        return file;
-    }
-
-    try {
-        const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
-        const scale = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height));
-
-        if (scale === 1 && file.size <= SHRINK_ABOVE_BYTES) {
-            bitmap.close();
-
-            return file;
-        }
-
-        const canvas = document.createElement('canvas');
-        canvas.width = Math.round(bitmap.width * scale);
-        canvas.height = Math.round(bitmap.height * scale);
-        canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-        bitmap.close();
-
-        return await new Promise((resolve) => canvas.toBlob((blob) => resolve(blob ?? file), 'image/jpeg', 0.9));
-    } catch {
-        return file;
-    }
-}
 
 async function errorMessage(response, fileName) {
     if (response.status === 413) {

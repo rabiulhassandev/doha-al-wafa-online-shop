@@ -43,27 +43,29 @@ it('stores images as WebP in the preset folder', function () {
     expect(Storage::disk('public')->mimeType($path))->toBe('image/webp');
 });
 
-it('crops product photos to 4:5 at every product width and keeps an uncropped source', function () {
+it('preserves the full product photo resolution and creates proportional responsive copies', function () {
     Storage::fake('public');
     $photo = UploadedFile::fake()->image('portrait.jpg', 2400, 3200);
 
     $widths = app(ImageStore::class)->storeProductImage($photo->getRealPath(), 'products/1/abc', ImageFocus::Center);
 
     expect($widths)->toBe([1200, 800, 400]);
-    expect(storedImageSize('products/1/abc/1200.webp'))->toBe([1200, 1500]);
-    expect(storedImageSize('products/1/abc/800.webp'))->toBe([800, 1000]);
-    expect(storedImageSize('products/1/abc/400.webp'))->toBe([400, 500]);
-    expect(storedImageSize('products/1/abc/source.webp'))->toBe([1500, 2000]);
+    expect(storedImageSize('products/1/abc/1200.webp'))->toBe([1200, 1600]);
+    expect(storedImageSize('products/1/abc/800.webp'))->toBe([800, 1067]);
+    expect(storedImageSize('products/1/abc/400.webp'))->toBe([400, 534]);
+    expect(storedImageSize('products/1/abc/source.webp'))->toBe([2400, 3200]);
 });
 
-it('crops landscape photos to the 4:5 area that fits inside them', function () {
+it('keeps the entire landscape photo at every responsive width', function () {
     Storage::fake('public');
     $photo = UploadedFile::fake()->image('landscape.jpg', 3000, 2000);
 
     $widths = app(ImageStore::class)->storeProductImage($photo->getRealPath(), 'products/1/wide', ImageFocus::Center);
 
-    expect($widths)->toBe([800, 400]);
-    expect(storedImageSize('products/1/wide/800.webp'))->toBe([800, 1000]);
+    expect($widths)->toBe([1200, 800, 400]);
+    expect(storedImageSize('products/1/wide/1200.webp'))->toBe([1200, 800]);
+    expect(storedImageSize('products/1/wide/800.webp'))->toBe([800, 533]);
+    expect(storedImageSize('products/1/wide/source.webp'))->toBe([3000, 2000]);
 });
 
 it('skips product widths larger than a small photo', function () {

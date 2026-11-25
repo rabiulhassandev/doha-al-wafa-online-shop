@@ -19,12 +19,12 @@ class ProductImageController extends Controller
     /**
      * Upload photos for a product color.
      *
-     * The admin page sends one photo per request (already shrunk in the browser) and asks for JSON;
+     * The admin page sends one original photo per request and asks for JSON;
      * a plain form post with several photos also works.
      */
     public function store(ProductImageRequest $request, Product $product, ProductColor $color, ImageStore $images): JsonResponse|RedirectResponse
     {
-        $focus = $request->enum('focus', ImageFocus::class);
+        $focus = $request->enum('focus', ImageFocus::class) ?? ImageFocus::Center;
         $sortOrder = (int) $color->images()->max('sort_order');
 
         /** @var list<UploadedFile> $files */

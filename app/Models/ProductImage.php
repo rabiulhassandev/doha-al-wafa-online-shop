@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Storage;
 
 /**
- * A product photo stored as 4:5 WebP files at several widths, e.g. "{directory}/800.webp".
+ * A product photo stored as WebP files at several widths, e.g. "{directory}/800.webp".
  *
  * @property list<int> $widths
  */
@@ -61,6 +61,11 @@ class ProductImage extends Model
     public function url(int $width = 800): string
     {
         return Storage::disk(config('shop.media_disk'))->url($this->path($width));
+    }
+
+    public function sourceUrl(): string
+    {
+        return Storage::disk(config('shop.media_disk'))->url("{$this->directory}/source.webp");
     }
 
     /**

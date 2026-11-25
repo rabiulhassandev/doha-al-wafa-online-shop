@@ -8,6 +8,22 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
 describe('store', function () {
+    it('accepts an original landscape photo without crop settings and retains its dimensions', function () {
+        Storage::fake('public');
+        $gallery = ProductColor::factory()->create();
+
+        $this->actingAs(User::factory()->staff()->create())
+            ->postJson(route('admin.products.colors.images.store', [$gallery->product, $gallery]), [
+                'images' => [UploadedFile::fake()->image('landscape.png', 3000, 1500)],
+            ])->assertCreated();
+
+        $image = ProductImage::query()->sole();
+        $source = getimagesizefromstring(Storage::disk('public')->get($image->directory.'/source.webp'));
+        $preview = getimagesizefromstring(Storage::disk('public')->get($image->directory.'/800.webp'));
+        expect([$source[0], $source[1]])->toBe([3000, 1500]);
+        expect([$preview[0], $preview[1]])->toBe([800, 400]);
+    });
+
     it('stores an uploaded photo at every product width and answers the uploader with JSON', function () {
         Storage::fake('public');
         $productColor = ProductColor::factory()->create();
