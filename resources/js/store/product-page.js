@@ -14,6 +14,10 @@ export default (data) => ({
     adding: false,
     notice: null,
     lightboxOpen: false,
+    lightboxIndex: 0,
+    lightboxOpener: null,
+    lightboxOverflow: null,
+    lightboxTouch: null,
     sizeGuideOpen: false,
     sizeUnit: 'cm',
     copied: false,
@@ -173,9 +177,88 @@ export default (data) => ({
     },
 
     openLightbox(index) {
+        if (this.lightboxOpen || index < 0 || index >= this.current.images.length) {
+            return;
+        }
+
         this.pauseVideos();
+        this.lightboxIndex = index;
+        this.lightboxOpener = document.activeElement;
+        this.lightboxOverflow = {
+            root: document.documentElement.style.overflow,
+            body: document.body.style.overflow,
+        };
+        document.documentElement.style.overflow = 'hidden';
+        document.body.style.overflow = 'hidden';
         this.lightboxOpen = true;
-        this.$nextTick(() => this.$refs.lightboxTrack.children[index]?.scrollIntoView({ inline: 'center' }));
+        this.$nextTick(() => {
+            if (this.lightboxOpen) {
+                this.$refs.photoDialog.showModal();
+                this.$refs.closePhotos.focus({ preventScroll: true });
+                this.revealLightboxThumbnail();
+            }
+        });
+    },
+
+    closeLightbox() {
+        if (!this.lightboxOpen) {
+            return;
+        }
+
+        this.lightboxOpen = false;
+        this.lightboxTouch = null;
+        if (this.$refs.photoDialog.open) {
+            this.$refs.photoDialog.close();
+        }
+
+        document.documentElement.style.overflow = this.lightboxOverflow.root;
+        document.body.style.overflow = this.lightboxOverflow.body;
+        this.lightboxOpener?.focus({ preventScroll: true });
+    },
+
+    selectLightboxPhoto(index) {
+        if (index < 0 || index >= this.current.images.length) {
+            return;
+        }
+
+        this.lightboxIndex = index;
+        this.$nextTick(() => this.revealLightboxThumbnail());
+    },
+
+    lightboxArrow(step) {
+        this.selectLightboxPhoto(this.lightboxIndex + (document.documentElement.dir === 'rtl' ? -step : step));
+    },
+
+    revealLightboxThumbnail() {
+        const strip = this.$refs.lightboxThumbnails;
+        const thumbnail = strip?.children[this.lightboxIndex];
+        if (!thumbnail) {
+            return;
+        }
+
+        const button = thumbnail.getBoundingClientRect();
+        const bounds = strip.getBoundingClientRect();
+        strip.scrollBy({ left: (button.left + button.right - bounds.left - bounds.right) / 2 });
+    },
+
+    startLightboxSwipe(event) {
+        this.lightboxTouch = event.touches.length === 1
+            ? { x: event.touches[0].clientX, y: event.touches[0].clientY }
+            : null;
+    },
+
+    endLightboxSwipe(event) {
+        if (!this.lightboxTouch) {
+            return;
+        }
+
+        const deltaX = event.changedTouches[0].clientX - this.lightboxTouch.x;
+        const deltaY = event.changedTouches[0].clientY - this.lightboxTouch.y;
+        this.lightboxTouch = null;
+
+        if (Math.abs(deltaX) > 60 && Math.abs(deltaX) > Math.abs(deltaY) * 2) {
+            this.lightboxArrow(deltaX < 0 ? 1 : -1);
+        }
     },
 
     pauseVideos() {

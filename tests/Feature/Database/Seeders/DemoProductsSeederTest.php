@@ -17,7 +17,7 @@ it('creates ready-to-sell demo products with photos and stock', function () {
     expect(Product::query()->where('status', ProductStatus::Active)->count())->toBe(4);
     expect(ProductVariant::query()->count())->toBe(13);
     expect(ProductColor::query()->whereNull('color_id')->count())->toBe(4);
-    $this->assertDatabaseCount('colors', 0);
+    $this->assertDatabaseHas('colors', ['slug' => 'navy', 'name_en' => 'Navy']);
     $this->assertDatabaseCount('product_images', 8);
     Storage::disk('public')->assertExists(ProductImage::query()->first()->directory.'/800.webp');
 

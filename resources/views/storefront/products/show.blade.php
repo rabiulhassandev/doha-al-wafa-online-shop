@@ -26,6 +26,7 @@
         'compareAtText' => $compareAtText,
         'whatsApp' => $whatsApp?->whatsAppNumber(),
         'messages' => [
+            'showPhoto' => __('Show photo :number'),
             'chooseSize' => __('Choose a size'),
             'inStock' => __('In stock'),
             'onlyLeft' => __('Only :count left'),
@@ -72,7 +73,7 @@
         </div>
 
         <div class="page-container mt-4 lg:grid lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:items-start lg:gap-12">
-            <div class="mx-auto w-full max-w-lg lg:mx-0">
+            <div class="mx-auto w-full min-w-0 max-w-lg lg:mx-0">
                 @foreach ($colors as $productColor)
                     @php($slug = $productColor->color?->slug ?? '')
                     <div data-product-gallery="{{ $slug }}" x-show="color === @js($slug)" @unless ($productColor->is($selectedColor)) style="display: none" @endunless>
@@ -95,7 +96,7 @@
                                     x-on:click="openLightbox({{ $loop->index }})"
                                     tabindex="{{ $loop->first && $productColor->videos->isEmpty() ? 0 : -1 }}"
                                     x-bind:tabindex="imageIndex === {{ $productColor->videos->count() + $loop->index }} ? 0 : -1"
-                                    class="aspect-square w-full shrink-0 snap-center cursor-zoom-in focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-maroon-700"
+                                    class="relative aspect-square w-full shrink-0 snap-center cursor-zoom-in focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-maroon-700"
                                 >
                                     <img
                                         src="{{ $image->url(800) }}"
@@ -146,7 +147,7 @@
                 @endforeach
             </div>
 
-            <div class="mt-6 space-y-6 lg:sticky lg:top-24 lg:mt-0">
+            <div class="mt-6 min-w-0 space-y-6 lg:sticky lg:top-24 lg:mt-0">
                 <div>
                     @if ($product->category->is_active)
                         <a href="{{ route('category.show', $product->category) }}" class="text-sm text-ink-500 hover:underline">{{ $product->category->translated('name') }}</a>
@@ -345,19 +346,53 @@
             @include('storefront.products.size-guide', ['sizeGuide' => $sizeGuide])
         @endif
 
-        {{-- Full-screen photos. Pinch to zoom works natively. --}}
-        <div x-cloak x-show="lightboxOpen" x-on:keydown.escape.window="lightboxOpen = false" class="fixed inset-0 z-50 bg-ink-900" role="dialog" aria-modal="true" aria-label="{{ __('Photos') }}">
-            <div x-ref="lightboxTrack" class="flex h-full snap-x snap-mandatory overflow-x-auto">
-                <template x-for="(image, index) in current.images" :key="color + index">
-                    <div class="flex h-full w-full shrink-0 snap-center items-center justify-center">
-                        <img x-bind:src="image.src" alt="" class="max-h-full w-full object-contain">
-                    </div>
-                </template>
+        {{-- The native modal keeps focus inside and renders above the sticky header and bag bar. --}}
+        <dialog
+            x-ref="photoDialog"
+            x-on:cancel.prevent="closeLightbox()"
+            x-on:close="if (!$el.open) closeLightbox()"
+            x-on:keydown.arrow-left.prevent.stop="lightboxArrow(-1)"
+            x-on:keydown.arrow-right.prevent.stop="lightboxArrow(1)"
+            aria-modal="true"
+            aria-label="{{ __('Photos') }}"
+            class="fixed inset-0 m-0 h-dvh max-h-none w-full max-w-none overflow-hidden border-0 bg-ink-900 p-0 text-white backdrop:bg-ink-900/80 open:flex open:flex-col"
+        >
+            <header class="flex shrink-0 items-center gap-3 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-3 sm:px-6">
+                <p class="min-w-0 flex-1 truncate text-sm font-medium">{{ $name }}</p>
+                <p class="shrink-0 text-sm tabular-nums text-white/80" role="status" aria-live="polite" aria-atomic="true">
+                    <span class="sr-only">{{ __('Photo') }}</span>
+                    <span x-text="(lightboxIndex + 1) + ' / ' + current.images.length"></span>
+                </p>
+                <button x-ref="closePhotos" type="button" x-on:click="closeLightbox()" autofocus class="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-white text-ink-900 hover:bg-sand-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+                    <x-icon name="close" class="size-6" />
+                    <span class="sr-only">{{ __('Close photos') }}</span>
+                </button>
+            </header>
+
+            <div class="relative min-h-0 min-w-0 flex-1 overflow-hidden"
+                x-on:touchstart.passive="startLightboxSwipe($event)"
+                x-on:touchmove.passive="if ($event.touches.length > 1) lightboxTouch = null"
+                x-on:touchcancel="lightboxTouch = null"
+                x-on:touchend.passive="endLightboxSwipe($event)"
+            >
+                <img x-bind:src="lightboxOpen ? current.images[lightboxIndex]?.src : null" x-bind:srcset="lightboxOpen ? current.images[lightboxIndex]?.srcset : null" sizes="100vw" alt="{{ $name }}" draggable="false" class="absolute inset-0 size-full object-contain px-2 sm:px-16">
+                <button type="button" x-show="current.images.length > 1" x-on:click="selectLightboxPhoto(lightboxIndex - 1)" x-bind:disabled="lightboxIndex === 0" aria-label="{{ __('Previous photo') }}" class="absolute start-2 top-1/2 grid size-11 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-ink-900 shadow-sm hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:opacity-30 sm:start-4">
+                    <x-icon name="chevron-end" class="size-6 rotate-180 rtl:rotate-0" />
+                </button>
+                <button type="button" x-show="current.images.length > 1" x-on:click="selectLightboxPhoto(lightboxIndex + 1)" x-bind:disabled="lightboxIndex === current.images.length - 1" aria-label="{{ __('Next photo') }}" class="absolute end-2 top-1/2 grid size-11 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-ink-900 shadow-sm hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:opacity-30 sm:end-4">
+                    <x-icon name="chevron-end" class="size-6 rtl:rotate-180" />
+                </button>
             </div>
-            <button type="button" x-on:click="lightboxOpen = false" class="absolute end-3 top-3 inline-flex size-11 items-center justify-center rounded-full bg-white/90 text-ink-900">
-                <x-icon name="close" class="size-6" />
-                <span class="sr-only">{{ __('Close photos') }}</span>
-            </button>
-        </div>
+
+            <div x-show="current.images.length > 1" class="min-w-0 shrink-0 px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6">
+                <div x-ref="lightboxThumbnails" class="mx-auto flex w-fit max-w-full gap-2 overflow-x-auto overscroll-x-contain py-1 [scrollbar-width:none]" role="group" aria-label="{{ __('Photo thumbnails') }}">
+                    <template x-for="(image, index) in current.images" :key="color + index">
+                        <button type="button" x-on:click="selectLightboxPhoto(index)" x-bind:aria-label="messages.showPhoto.replace(':number', index + 1)" x-bind:aria-pressed="(lightboxIndex === index).toString()" class="size-12 shrink-0 overflow-hidden rounded-lg border-2 border-transparent opacity-60 hover:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white aria-pressed:border-white aria-pressed:opacity-100 sm:size-14">
+                            <img x-bind:src="lightboxOpen ? image.src : null" x-bind:srcset="lightboxOpen ? image.srcset : null" sizes="56px" alt="" loading="lazy" class="size-full object-cover">
+                        </button>
+                    </template>
+                </div>
+            </div>
+        </dialog>
     </div>
 </x-store.layout>
