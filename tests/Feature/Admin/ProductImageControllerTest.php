@@ -64,7 +64,7 @@ describe('store', function () {
         expect($productColor->images()->pluck('sort_order')->all())->toBe([40, 50, 60]);
     });
 
-    it('rejects photos outside the allowed dimensions', function (int $width, int $height) {
+    it('accepts photos of any resolution and preserves the source dimensions', function (int $width, int $height) {
         Storage::fake('public');
         $productColor = ProductColor::factory()->create();
 
@@ -73,11 +73,19 @@ describe('store', function () {
                 'images' => [UploadedFile::fake()->image('photo.jpg', $width, $height)],
                 'focus' => 'center',
             ])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['images.0' => 'Photos must be at least 500 × 625 pixels and at most 4096 pixels on either side.']);
+            ->assertCreated();
 
-        $this->assertDatabaseCount('product_images', 0);
-    })->with(['too small' => [300, 300], 'too wide' => [4097, 625], 'too tall' => [500, 4097]]);
+        $image = ProductImage::query()->sole();
+        $source = getimagesizefromstring(Storage::disk('public')->get($image->directory.'/source.webp'));
+        expect([$source[0], $source[1]])->toBe([$width, $height]);
+        expect($image->widths)->toContain(min($width, 400));
+    })->with([
+        'single pixel' => [1, 1],
+        'small photo' => [300, 300],
+        'wide photo' => [4097, 625],
+        'tall photo' => [500, 4097],
+        'panorama' => [6000, 1],
+    ]);
 
     it('stops at twelve photos per color', function () {
         Storage::fake('public');

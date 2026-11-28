@@ -61,14 +61,14 @@ class ImageStore
         $image = $this->images->decodePath($sourcePath);
         $disk->put("{$directory}/source.webp", $image->encode(new WebpEncoder(quality: 100, strip: true))->toString());
         $originalWidth = $image->width();
+        $widths = array_values(array_filter(self::PRODUCT_WIDTHS, fn (int $width): bool => $width <= $originalWidth));
+        if ($widths === []) {
+            $widths = [$originalWidth];
+        }
 
         $storedWidths = [];
 
-        foreach (self::PRODUCT_WIDTHS as $width) {
-            if ($width > $originalWidth && $width !== min(self::PRODUCT_WIDTHS)) {
-                continue;
-            }
-
+        foreach ($widths as $width) {
             $image->scaleDown(width: $width);
             $disk->put("{$directory}/{$width}.webp", $image->encode($encoder)->toString());
             $storedWidths[] = $width;

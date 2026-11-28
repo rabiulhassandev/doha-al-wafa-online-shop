@@ -179,7 +179,7 @@
                                     <span x-show="busy" x-cloak x-text="`Uploading ${done + 1} of ${total}…`"></span>
                                 </x-admin.button>
                             </div>
-                            <p class="mt-2 text-xs text-ink-500">JPG, PNG or WebP, up to 15 MB. At least 500 × 625 pixels and at most 4096 pixels on either side. Original dimensions and proportions are preserved.</p>
+                            <p class="mt-2 text-xs text-ink-500">JPG, PNG or WebP, up to 15 MB. Original dimensions and proportions are preserved.</p>
                             <p x-show="error" x-cloak x-text="error" class="mt-2 text-sm font-medium text-danger-700" role="alert"></p>
                             @error('images')
                                 <p class="mt-2 text-sm font-medium text-danger-700">{{ $message }}</p>
